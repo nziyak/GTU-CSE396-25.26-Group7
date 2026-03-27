@@ -32,4 +32,19 @@ public class RobotManager : MonoBehaviour
 }
 ```
 
-API SummaryFunction / EventParametersReturn ValueDescriptionConnectstring ipAddressvoidConnects to the Pi 5 WebSocket server.DisconnectvoidvoidGracefully closes the socket connection.SendOperatorCommandstring commandvoidSends manual override commands to Pi.SendAudioBlobbyte[] wavDatavoidTransmits recorded audio for STT.OnTelemetryReceivedTelemetryData dataevent ActionTriggered when JSON is deserialized.TODO: [Dicle'nin Fonks.]......UpdateMapPins(), UpdateUI() vb. eklenecek.TODO: [Evrim'in Fonks.]......StartRecording(), StopAndEncode() vb. eklenecek.Known Limitations and TODOSTODO: Decide on exact Unity coordinate system scaling relative to physical arena (e.g., 1 Unity Unit = 10 cm).Limitation: Audio blobs must be compressed or kept short (<5 seconds) to prevent WebSocket buffer overflow.Version Historyv0.1 (2026-03-18): Initial draft, defined Network Client interfaces and JSON Telemetry structures.
+### API Summary
+
+* **`void Connect(string ipAddress)`**
+  * **Description:** Connects to the Pi 5 WebSocket server.
+* **`void Disconnect(void)`**
+  * **Description:** Gracefully closes the socket connection.
+* **`void SendOperatorCommand(string command)`**
+  * **Description:** Sends manual override commands to Pi.
+* **`void SendAudioBlob(byte[] wavData)`**
+  * **Description:** Transmits recorded audio for STT.
+* **`event Action OnTelemetryReceived(TelemetryData data)`**
+  * **Description:** Triggered when JSON is deserialized.
+* **`TODO: [Dicle]`**
+  * **Description:** `UpdateMapPins()`, `UpdateUI()` vb. eklenecek.
+* **`TODO: [Evrim]`**
+  * **Description:** `StartRecording()`, `StopAndEncode()` vb. eklenecek.

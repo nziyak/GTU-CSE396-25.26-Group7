@@ -37,12 +37,21 @@ int main(void) {
     }
 }
 ```
-Function,Parameters,Return Value,Description
-pwr_init,void,pwr_status_t,Initializes power GPIO pins.
-pwr_set_decoy_state,bool enable,void,Enables/disables 12V output for motors.
-pwr_is_time_limit_exceeded,void,bool,Checks if 60-min RTH limit is hit.
-uart_comm_init,void,int8_t,Initializes UART peripheral and DMA.
-uart_send_telemetry,const uart_telemetry_t* data,void,Sends structured telemetry to Pi 5.
-uart_receive_command,uart_command_t* out_cmd,bool,Parses incoming motor/light commands.
-TODO: [Ömer],...,...,"Motor_SetSpeed, Stuck_Check vb. eklenecek."
-TODO: [Gabil],...,...,"Sensor_ReadDHT22, Sensor_ReadMQ2 vb. eklenecek."
+### API Summary
+
+* **`pwr_status_t pwr_init(void)`**
+  * **Description:** Initializes power GPIO pins.
+* **`void pwr_set_decoy_state(bool enable)`**
+  * **Description:** Enables/disables 12V output for motors.
+* **`bool pwr_is_time_limit_exceeded(void)`**
+  * **Description:** Checks if 60-min RTH limit is hit.
+* **`int8_t uart_comm_init(void)`**
+  * **Description:** Initializes UART peripheral and DMA.
+* **`void uart_send_telemetry(const uart_telemetry_t* data)`**
+  * **Description:** Sends structured telemetry to Pi 5.
+* **`bool uart_receive_command(uart_command_t* out_cmd)`**
+  * **Description:** Parses incoming motor/light commands.
+* **`TODO: [Ömer]`**
+  * **Description:** `Motor_SetSpeed`, `Stuck_Check` vb. eklenecek.
+* **`TODO: [Gabil]`**
+  * **Description:** `Sensor_ReadDHT22`, `Sensor_ReadMQ2` vb. eklenecek.
