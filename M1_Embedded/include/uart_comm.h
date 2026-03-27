@@ -10,6 +10,7 @@
  * * Changelog:
  * v0.1 (2026-03-27) - Initial draft, structs for telemetry and commands.
  * v0.2 (2026-03-27) - Added acoustic angle variable to telemetry payload.
+ * v0.3 (2026-03-27) - Added imu yaw angle and ultrasonic distance sensors variables for mapping.
  */
 
 #include <stdint.h>
@@ -40,6 +41,12 @@ typedef struct {
     bool    smoke_detected;   /**< MQ-2 digital threshold status */
     bool    is_stuck;         /**< MPU6050 stuck detection flag */
     float   acoustic_angle;   /**< IIR filtered acoustic bearing (-180 to 180) */
+    
+    float   imu_yaw_angle;    /**< Robot's current compass direction (turn amount in z axis) */
+    uint8_t us_dist_front;    /**< Front ultrasonic sensor distance (cm) */
+    uint8_t us_dist_back;     /**< Back ultrasonic sensor distance (cm) */
+    uint8_t us_dist_left;     /**< Left ultrasonic sensor distance (cm) */
+    uint8_t us_dist_right;    /**< Right ultrasonic sensor distance (cm) */
 } uart_telemetry_t;
 
 /**
