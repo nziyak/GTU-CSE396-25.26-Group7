@@ -36,6 +36,5 @@ int main(void) {
         }
     }
 }
-
-
+```
 API SummaryFunctionParametersReturn ValueDescriptionpwr_initvoidpwr_status_tInitializes power GPIO pins.pwr_set_decoy_statebool enablevoidEnables/disables 12V output for motors.pwr_is_time_limit_exceededvoidboolChecks if 60-min RTH limit is hit.uart_comm_initvoidint8_tInitializes UART peripheral and DMA.uart_send_telemetryconst uart_telemetry_t* datavoidSends structured telemetry to Pi 5.uart_receive_commanduart_command_t* out_cmdboolParses incoming motor/light commands.TODO: [Ömer]......Motor_SetSpeed, Stuck_Check vb. eklenecek.TODO: [Gabil]......Sensor_ReadDHT22, Sensor_ReadMQ2 vb. eklenecek.Known Limitations and TODOSTODO: Define exact GPIO pins for L298N PWM channels.Limitation: UART DMA buffer size is strictly limited to 128 bytes; payload must not exceed this.Version Historyv0.2 (2026-03-27): Updated telemetry payload to include dead-reckoning variables.v0.1 (2026-03-27): Initial draft, defined power management and UART communication contracts.
