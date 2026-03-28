@@ -1,7 +1,7 @@
 /// <summary>
 /// File:    AudioManager.cs
 /// Brief:   Push-to-Talk Audio Capture - public interface
-/// Author:  Evrim [Soyisim] [Öğrenci No]
+/// Author:  Evrim Doğa Solmaz 230104004042
 /// Date:    2026-03-28
 /// Version: 0.2
 ///
