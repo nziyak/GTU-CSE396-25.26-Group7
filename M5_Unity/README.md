@@ -46,5 +46,13 @@ public class RobotManager : MonoBehaviour
   * **Description:** Triggered when JSON is deserialized.
 * **`TODO: [Dicle]`**
   * **Description:** `UpdateMapPins()`, `UpdateUI()` vb. eklenecek.
-* **`TODO: [Evrim]`**
-  * **Description:** `StartRecording()`, `StopAndEncode()` vb. eklenecek.
+* `void StartRecording()`
+   * Description: Starts microphone capture. Bind to PTT button's OnPointerDown event.
+* `void StopAndEncode()`
+   * Description: Stops capture, encodes AudioClip to .wav, sends via INetworkClient.SendAudioBlob().
+* `void SetNetworkClient(INetworkClient client)`
+   * Description: Injects Ziya's network client. Must be called before any recording.
+* `AudioCaptureState GetCaptureState()`
+   * Description: Returns current state: Idle / Recording / Encoding / Sending.
+* `event Action<byte[]> OnAudioBlobReady`
+   * Description: Fired after encoding, before sending. UIManager subscribes for HUD feedback.
