@@ -1,21 +1,23 @@
-MOD-03 — Acoustics & Navigation Pipeline
-Purpose: Provides the acoustic sensing and autonomous movement layer of the robot. It detects human distress calls via Acoustic Source Localization (ASL), filters motor noise using a Software-based Digital IIR Filter on the STM32, and manages spatial awareness through Spin-Scan Mapping and Acoustic Homing protocols.
-Authors:
+# MOD-03 — Acoustics & Navigation Pipeline
 
-Uğur Anıl Güney [Öğrenci No Yaz] (Primary — STM32 Firmware & Acoustic Processing)
-Evrim Doğa Solmaz [Öğrenci No Yaz] (Secondary — Python Bridge & Navigation Interfacing)
-Tuana Melisa Aksoy [Öğrenci No Yaz] (Secondary — FSM Branching & Mode Transitions)
-Dicle Çoban [Öğrenci No Yaz] (Secondary — Unity Visualizer & Beam Mapping)
+**Purpose:** Provides the acoustic sensing and autonomous movement layer of the robot. It detects human distress calls via Acoustic Source Localization (ASL), filters motor noise using a Software-based Digital IIR Filter on the STM32, and manages spatial awareness through Spin-Scan Mapping and Acoustic Homing protocols.
 
-Dependencies:
+**Authors:**
+- Uğur Anıl Güney [Öğrenci No Yaz] (Primary — STM32 Firmware & Acoustic Processing)
+- Evrim Doğa Solmaz [Öğrenci No Yaz] (Secondary — Python Bridge & Navigation Interfacing)
+- Tuana Melisa Aksoy [Öğrenci No Yaz] (Secondary — FSM Branching & Mode Transitions)
+- Dicle Çoban [Öğrenci No Yaz] (Secondary — Unity Visualizer & Beam Mapping)
 
-STM32 HAL Library + CMSIS-DSP (for IIR Filtering)
-Hardware: 3x MAX4466 Microphones, HC-SR04 Ultrasonic Sensors
-Python: RPi.GPIO, math (for triangulation)
-Data Contract: UART packet must include |A_Hit:x|A_Ang:y| appended to MOD-01's telemetry string
+**Dependencies:**
+- STM32 HAL Library + CMSIS-DSP (for IIR Filtering)
+- Hardware: 3x MAX4466 Microphones, HC-SR04 Ultrasonic Sensors
+- Python: `RPi.GPIO`, `math` (for triangulation)
+- Data Contract: UART packet must include `|A_Hit:x|A_Ang:y|` appended to MOD-01's telemetry string
 
-Quick-Start Integration Example
-python# Acoustic Homing & FSM Transition — Python side (Evrim)
+## Quick-Start Integration Example
+
+```python
+# Acoustic Homing & FSM Transition — Python side (Evrim)
 from acoustics import AcousticProcessor, NavigationFSM
 
 acoustics = AcousticProcessor()
@@ -27,48 +29,31 @@ if telemetry_data['A_Hit'] == 1:
     fsm.transition_to_homing(bearing=telemetry_data['A_Ang'])
     # Execute motor commands to rotate towards sound source
     acoustics.align_to_source()
-API Summary
+```
 
-TODO: [Uğur]
+## API Summary
 
-Description: IIR_Filter_Apply(), Acoustic_ComputeBearing(), SpinScan_Execute(), Homing_Navigate() etc. to be added.
+- `TODO: [Uğur]`
+  - Description: `IIR_Filter_Apply()`, `Acoustic_ComputeBearing()`, `SpinScan_Execute()`, `Homing_Navigate()` etc. to be added.
+- `TODO: [Evrim]`
+  - Description: `acoustic_homing.py` bridge functions to be added.
+- `TODO: [Tuana]`
+  - Description: `fsm_update()` acoustic branching logic to be added.
+- `TODO: [Dicle]`
+  - Description: `MapManager.ShowAcousticBeam()` etc. to be added.
 
+## Known Risks & Open Questions
 
-TODO: [Evrim]
+**Risks:**
+- **Acoustic Noise:** Motor/gearbox noise may interfere with microphone sensitivity.
+  - Mitigation: Software-based Digital IIR Filter on STM32 to attenuate motor frequency band.
+- **Reflection/Echo:** Indoor arenas may cause acoustic ghosting leading to incorrect bearing calculation.
+  - Mitigation: Multiple bearing samples will be averaged before triggering FSM transition.
 
-Description: acoustic_homing.py bridge functions to be added.
+**Open Question:**
+- Should `SpinScan_Execute()` run only once at startup, or be re-triggered periodically if no victims are found within a set time?
 
+## Version History
 
-TODO: [Tuana]
-
-Description: fsm_update() acoustic branching logic to be added.
-
-
-TODO: [Dicle]
-
-Description: MapManager.ShowAcousticBeam() etc. to be added.
-
-
-
-Known Risks & Open Questions
-Risks:
-
-Acoustic Noise: Motor/gearbox noise may interfere with microphone sensitivity.
-
-Mitigation: Software-based Digital IIR Filter on STM32 to attenuate motor frequency band.
-
-
-Reflection/Echo: Indoor arenas may cause acoustic ghosting leading to incorrect bearing calculation.
-
-Mitigation: Multiple bearing samples will be averaged before triggering FSM transition.
-
-
-
-Open Question:
-
-Should SpinScan_Execute() run only once at startup, or be re-triggered periodically if no victims are found within a set time?
-
-Version History
-
-v0.2 (2026-03-28): Team list finalized. UART packet format (|A_Hit:x|A_Ang:y|) aligned with MOD-01/04 standards.
-v0.1 (2026-03-25): Initial architecture draft; IIR filter and Homing logic defined.
+- v0.2 (2026-03-28): Team list finalized. UART packet format (`|A_Hit:x|A_Ang:y|`) aligned with MOD-01/04 standards.
+- v0.1 (2026-03-25): Initial architecture draft; IIR filter and Homing logic defined.
