@@ -5,7 +5,7 @@
 **Authors:**
 * Dicle [Öğrenci Nonu Yaz] (Primary - UI & 3D Map)
 * Ziya [Öğrenci Nonu Yaz] (Secondary - WebSockets & JSON)
-* Evrim [Öğrenci Nonu Yaz] (Secondary - Audio Capture)
+* Evrim [230104004042] (Secondary - Audio Capture)
 
 **Dependencies:**
 * Unity Engine (2022.3 or newer)
@@ -46,5 +46,13 @@ public class RobotManager : MonoBehaviour
   * **Description:** Triggered when JSON is deserialized.
 * **`TODO: [Dicle]`**
   * **Description:** `UpdateMapPins()`, `UpdateUI()` vb. eklenecek.
-* **`TODO: [Evrim]`**
-  * **Description:** `StartRecording()`, `StopAndEncode()` vb. eklenecek.
+* `void StartRecording()`
+   * Description: Starts microphone capture. Bind to PTT button's OnPointerDown event.
+* `void StopAndEncode()`
+   * Description: Stops capture, encodes AudioClip to .wav, sends via INetworkClient.SendAudioBlob().
+* `void SetNetworkClient(INetworkClient client)`
+   * Description: Injects Ziya's network client. Must be called before any recording.
+* `AudioCaptureState GetCaptureState()`
+   * Description: Returns current state: Idle / Recording / Encoding / Sending.
+* `event Action<byte[]> OnAudioBlobReady`
+   * Description: Fired after encoding, before sending. UIManager subscribes for HUD feedback.
