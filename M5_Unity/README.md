@@ -5,7 +5,7 @@
 **Authors:**
 * Dicle [Öğrenci Nonu Yaz] (Primary - UI & 3D Map)
 * Ziya [Öğrenci Nonu Yaz] (Secondary - WebSockets & JSON)
-* Evrim [Öğrenci Nonu Yaz] (Secondary - Audio Capture)
+* Evrim [230104004042] (Secondary - Audio Capture)
 
 **Dependencies:**
 * Unity Engine (2022.3 or newer)
