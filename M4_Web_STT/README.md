@@ -6,7 +6,7 @@
 * Ömer [Öğrenci No] (Primary - Comms Bridging & JSON Telemetry)
 * Tuana [Öğrenci No] (Primary - Offline STT Model Integration)
 * Uğur [Öğrenci No] (Secondary - Video Streaming Pipeline)
-* Fatma [Öğrenci No] (Secondary - Operator Control Routing)
+* Fatma Öztürk [230104004152] (Secondary - Operator Control Routing)
 
 **Dependencies:**
 * Python 3.9+
