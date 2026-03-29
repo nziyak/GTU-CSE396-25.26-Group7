@@ -5,7 +5,7 @@
 **Authors:**
 * Ziya 210104004027 (Primary - Power & UART)
 * Ömer 210104004814 (Secondary - Motors & Stuck Detection)
-* Gabil [Öğrenci Nonu Yaz] (Secondary - Env. Sensors)
+* Gabil 230104004902 (Secondary - Env. Sensors)
 
 **Dependencies:** * STM32 HAL Library (`stm32f1xx_hal.h`, `_gpio.h`, `_tim.h`, `_i2c.h`)
 * Standard C libraries (`<stdint.h>`, `<stdbool.h>`)
