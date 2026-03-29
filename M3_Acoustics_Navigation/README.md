@@ -5,7 +5,7 @@
 **Authors:**
 - Uğur Anıl Güney [Öğrenci No Yaz] (Primary — STM32 Firmware & Acoustic Processing)
 - Evrim Doğa Solmaz 230104004042 (Secondary — Python Bridge & Navigation Interfacing)
-- Tuana Melisa Aksoy [Öğrenci No Yaz] (Secondary — FSM Branching & Mode Transitions)
+- Tuana Melisa Aksoı 230104004903 (Secondary — FSM Branching & Mode Transitions)
 - Dicle Çoban [Öğrenci No Yaz] (Secondary — Unity Visualizer & Beam Mapping)
 
 **Dependencies:**
@@ -37,8 +37,17 @@ if telemetry_data['A_Hit'] == 1:
   - Description: `IIR_Filter_Apply()`, `Acoustic_ComputeBearing()`, `SpinScan_Execute()`, `Homing_Navigate()` etc. to be added.
 - `TODO: [Evrim]`
   - Description: `acoustic_homing.py` bridge functions to be added.
-- `TODO: [Tuana]`
-  - Description: `fsm_update()` acoustic branching logic to be added.
+- **Tuana — `fsm_acoustic.h`** (FSM Branching & Mode Transitions)
+
+| Function | Parameters | Return | Description |
+|---|---|---|---|
+| `FSM_Acoustic_Init()` | `void` | `void` | Resets internal hit streak, cooldown, and timers. Call once before FSM loop. |
+| `FSM_Acoustic_Update()` | `fsm_state_t current_state, const fsm_acoustic_event_t *event, fsm_acoustic_result_t *result` | `bool` | Core branching logic. Accumulates 3 consecutive A_Hit confirmations, then fires EXPLORE → ACOUSTIC_HOMING transition. |
+| `FSM_Acoustic_IsHomingTimedOut()` | `uint32_t now_ms` | `bool` | Returns true if ACOUSTIC_HOMING exceeded 30s timeout. |
+| `FSM_Acoustic_ShouldInterruptExplore()` | `fsm_state_t current_state, const fsm_acoustic_event_t *event` | `bool` | Quick check for Evrim's bridge to pre-stop motors before formal state change. |
+| `FSM_Acoustic_ResetStreak()` | `void` | `void` | Resets hit counter and cooldown on timeout or false positive. |
+| `FSM_Acoustic_GetStateName()` | `fsm_state_t state` | `const char*` | Returns state label string for M4/M5 display. |
+
 - `TODO: [Dicle]`
   - Description: `MapManager.ShowAcousticBeam()` etc. to be added.
 
@@ -55,5 +64,6 @@ if telemetry_data['A_Hit'] == 1:
 
 ## Version History
 
+- v0.3 (2026-03-29): `fsm_acoustic.h` API added. Signatures aligned with M4_MainFSM.py and acoustic_homing.py.
 - v0.2 (2026-03-28): Team list finalized. UART packet format (`|A_Hit:x|A_Ang:y|`) aligned with MOD-01/04 standards.
 - v0.1 (2026-03-25): Initial architecture draft; IIR filter and Homing logic defined.
