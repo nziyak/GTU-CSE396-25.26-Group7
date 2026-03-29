@@ -3,77 +3,121 @@
 
 /**
  * @file    ai_vision.h
- * @brief   AI & Vision Pipeline - Target detection and severity analysis interface
+ * @brief   AI & Vision Pipeline public interface for target detection and victim severity analysis
  * @author  Fatma Öztürk 230104004152
- * @date    2026-03-28
- * @version 0.2
- * * Changelog:
- * v0.1 - Initial draft with YOLO and VLM interface.
- * v0.2 - Aligned victim status enums with M5 Unity DataContracts.
+ * @date    2026-03-29
+ * @version 0.3
+ *
+ * Changelog:
+ *   v0.1 - Initial draft with YOLO and VLM interface.
+ *   v0.2 - Aligned victim status enums with Unity data contracts.
+ *   v0.3 - Cleaned public interface comments and finalized module-level API.
  */
 
 #include <stdint.h>
 #include <stdbool.h>
 
-/* -- Constants & Macros ---------------------------------------------------- */
-#define VISION_DEFAULT_FPS      5       /**< Low-power exploration framerate  */
-#define VISION_MAX_FPS          25      /**< High-power assessment framerate [cite: 113] */
-#define VISION_VLM_TIMEOUT_SEC  5       /**< Max latency allowed for Edge VLM  */
+/* -- Constants & Macros --------------------------------------------------- */
 
-/* -- Data Types ------------------------------------------------------------ */
+/** @brief Default FPS used during low-power exploration mode. */
+#define VISION_DEFAULT_FPS      5
 
-/** * @brief Victim status levels aligned with M5 Unity DataContracts.cs [cite: 157]
+/** @brief Maximum FPS used during high-performance victim assessment mode. */
+#define VISION_MAX_FPS          25
+
+/** @brief Maximum allowed timeout in seconds for vision-language inference. */
+#define VISION_VLM_TIMEOUT_SEC  5
+
+/* -- Data Types ----------------------------------------------------------- */
+
+/**
+ * @brief Victim status classification produced by the AI & Vision module.
  */
-typedef enum {
-    VISION_STAT_NONE     = 0, /**< No victim in sight */
-    VISION_STAT_STANDING = 1, /**< Person standing (Low Priority) [cite: 125] */
-    VISION_STAT_LYING    = 2, /**< Person lying down (Medium Priority) [cite: 121] */
-    VISION_STAT_TRAPPED  = 3  /**< Person trapped (High Priority) [cite: 121] */
+typedef enum
+{
+    VISION_STAT_NONE     = 0, /**< No victim detected in the current frame. */
+    VISION_STAT_STANDING = 1, /**< Victim is standing. */
+    VISION_STAT_LYING    = 2, /**< Victim is lying down. */
+    VISION_STAT_TRAPPED  = 3  /**< Victim appears trapped or critically positioned. */
 } vision_status_t;
 
-/** * @brief Mapping priority levels for Unity Map Pins [cite: 123, 125]
+/**
+ * @brief Pin priority / color mapping used by dashboard and Unity visualization.
  */
-typedef enum {
-    VISION_PIN_GREEN     = 3, /**< Standing / Safe environment */
-    VISION_PIN_YELLOW    = 2, /**< Lying / Needs attention */
-    VISION_PIN_RED       = 1  /**< Trapped / Critical emergency */
+typedef enum
+{
+    VISION_PIN_GREEN  = 3, /**< Low-priority / safe-state target marker. */
+    VISION_PIN_YELLOW = 2, /**< Medium-priority target marker. */
+    VISION_PIN_RED    = 1  /**< High-priority / critical target marker. */
 } vision_priority_t;
 
-/** * @brief Results of the AI analysis for the Augmented Status Report [cite: 127]
+/**
+ * @brief Final result produced after processing a frame.
+ *
+ * This structure is intended to be shared with higher-level modules such as
+ * FSM, Web Dashboard, and Unity Digital Twin integration layers.
  */
-typedef struct {
-    uint16_t          target_id;      /**< ID for tracking multiple victims [cite: 120] */
-    vision_status_t   status;         /**< Classified victim state */
-    vision_priority_t priority;       /**< Assigned pin color for Unity [cite: 157] */
-    float             confidence;     /**< Model confidence score (0.0-1.0) */
-    uint16_t          bbox_area;      /**< Used for proximity tie-breaker  */
+typedef struct
+{
+    uint16_t          target_id;       /**< Unique ID for the detected target. */
+    vision_status_t   status;          /**< Classified victim status. */
+    vision_priority_t priority;        /**< Visualization / queue priority level. */
+    float             confidence;      /**< Model confidence score in range [0.0, 1.0]. */
+    uint16_t          bbox_area;       /**< Bounding-box area used for proximity tie-breaks. */
+    bool              target_detected; /**< True if a valid target is detected in frame. */
 } vision_result_t;
 
-/* -- Public Functions ------------------------------------------------------ */
+/* -- Public Functions ----------------------------------------------------- */
 
-/** * @brief  Initializes YOLOv8 and VLM models on the Raspberry Pi 5.
+/**
+ * @brief  Initialize the AI & Vision pipeline on the Raspberry Pi.
+ *
+ * This function prepares the required camera-side and model-side resources
+ * needed for person detection and victim analysis.
+ *
  * @return 0 on success, negative error code otherwise.
  */
 int ai_vision_init(void);
 
-/** * @brief  Adjusts FPS based on FSM state to prevent overheating[cite: 111, 112].
- * @param  high_perf If true, boosts FPS to VISION_MAX_FPS.
+/**
+ * @brief  Set the current power mode of the vision pipeline.
+ *
+ * In low-power mode, the module is expected to operate near
+ * VISION_DEFAULT_FPS. In high-performance mode, it may increase its runtime
+ * FPS up to VISION_MAX_FPS for detailed victim assessment.
+ *
+ * @param  high_perf True to enable high-performance mode, false for default mode.
  */
 void ai_vision_set_power_mode(bool high_perf);
 
-/** * @brief  Pauses vision models to allow MOD-04 to run STT[cite: 133, 147].
- * @note   Prevents Out-Of-Memory (OOM) errors on the Pi 5.
+/**
+ * @brief  Pause the vision pipeline to free resources for other critical modules.
+ *
+ * This is primarily used during STT or other high-cost operations that require
+ * temporary preemption of vision workloads.
  */
 void ai_vision_preemptive_pause(void);
 
-/** * @brief  Resumes vision pipeline after STT processing is complete[cite: 103].
+/**
+ * @brief  Resume the vision pipeline after a temporary pause.
  */
 void ai_vision_resume(void);
 
-/** * @brief  Analyzes the current frame to classify victim severity.
- * @param  out_result Pointer to store the analysis (Status, Priority, etc.).
- * @return 0 if target is confirmed, -1 if no target found.
+/**
+ * @brief  Process the current frame and produce a victim analysis result.
+ *
+ * If a valid human target is detected, the output structure is filled with
+ * status, priority, confidence, and proximity-related metadata.
+ *
+ * @param  out_result Pointer to caller-owned output result structure.
+ * @return 0 if processing succeeds and a target result is produced,
+ *         negative error code otherwise.
  */
 int ai_vision_process_frame(vision_result_t *out_result);
+
+/**
+ * @brief  Shutdown the AI & Vision pipeline and release allocated resources.
+ */
+void ai_vision_shutdown(void);
 
 #endif /* MODULE_AI_VISION_H */
