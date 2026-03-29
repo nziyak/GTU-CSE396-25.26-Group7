@@ -106,7 +106,10 @@ float imu_get_yaw_angle(void)
 
 Description: Returns the integrated Z-axis rotation for dead-reckoning mapping.
 
-TODO: [Gabil]
+- Integrate `environment_sensors.h` into the main control loop to collect DHT22 and MQ-2 readings periodically
+- Extend telemetry packets with environmental data such as temperature, humidity, and smoke level
+- Use smoke threshold logic from `environment_sensors.h` for future safety / warning behavior
+- Evaluate whether environmental sensor readings should also contribute to higher-level decision-making or Return-to-Home / alert policies
 
 Description: Sensor_ReadDHT22, Sensor_ReadMQ2 functions to be added.
 
