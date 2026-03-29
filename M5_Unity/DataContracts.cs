@@ -45,4 +45,10 @@ public struct TelemetryData
     
     /// <summary> Priority level for the Unity Map Pin (1=Red, 2=Yellow, 3=Green) </summary>
     public int priorityLevel;
+
+    /// <summary> True if a distress call is detected by the acoustic sensor array </summary>
+    public bool acousticHit;     
+
+    /// <summary> Bearing angle to the acoustic source in degrees (-180.0 to +180.0) </summary>
+    public float acousticAngle;
 }

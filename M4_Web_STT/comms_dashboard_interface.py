@@ -24,6 +24,9 @@ class AugmentedStatusReport:
     smoke_detected: bool
     victim_status: str       # "NONE", "STANDING", "LYING", "TRAPPED"
     is_stuck: bool
+    priority_level: int      
+    acoustic_hit: bool       
+    acoustic_angle: float
 
 
 class IWebDashboard(ABC):
