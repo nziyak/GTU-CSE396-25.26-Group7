@@ -4,9 +4,9 @@
 
 **Authors:**
 - Uğur Anıl Güney [210104004011] (Primary — STM32 Firmware & Acoustic Processing)
-- Evrim Doğa Solmaz 230104004042 (Secondary — Python Bridge & Navigation Interfacing)
-- Tuana Melisa Aksoı 230104004903 (Secondary — FSM Branching & Mode Transitions)
-- Dicle Çoban [Öğrenci No Yaz] (Secondary — Unity Visualizer & Beam Mapping)
+- Evrim Doğa Solmaz [230104004042] (Secondary — Python Bridge & Navigation Interfacing)
+- Tuana Melisa Aksoı [230104004903] (Secondary — FSM Branching & Mode Transitions)
+- Dicle Çoban [220104004088] (Secondary — Unity Visualizer & Beam Mapping)
 
 **Dependencies:**
 - STM32 HAL Library + CMSIS-DSP (for IIR Filtering)
