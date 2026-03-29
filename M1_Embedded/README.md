@@ -58,6 +58,8 @@ int main(void) {
         }
     }
 }
+```
+
 API Summary
 pwr_status_t pwr_init(void)
 
