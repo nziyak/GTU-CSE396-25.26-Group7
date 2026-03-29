@@ -1,6 +1,7 @@
 """
 @file      victim_analyzer_internal.py
-@brief     Internal victim severity analysis layer for the Vision & AI Pipeline@author    Gabil Rahimli
+@brief     Internal victim severity analysis layer for the Vision & AI Pipeline
+@author    Gabil Rahimli
 @date      2026-03-29
 @version   0.1
 
