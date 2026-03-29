@@ -1,23 +1,25 @@
 """
 File:    acoustic_homing.py
 Brief:   MOD-03 Python Bridge — Acoustic Homing & FSM Integration
-Author:  Evrim Doğa Solmaz [Öğrenci No Yaz]
-Date:    2026-03-28
-Version: 0.1
-
+Author:  Evrim Doğa Solmaz 230104004042
+Date:    2026-03-29
+Version: 0.2
+ 
 Changelog:
 v0.1 (2026-03-28) - Initial draft: interface stubs for acoustic bridge defined.
+v0.2 (2026-03-29) - Aligned NavCommand with Modül 1 standard ('W, A, S, D, Q' and action flag).
 
 Consumed by: MOD-04 fsm_update loop on Raspberry Pi.
 Depends on:  acoustics_iir.h (Uğur) for bearing data via UART,
              fsm_acoustic.h (Tuana) for FSM state transition signals.
 
 Usage:
-    from acoustic_homing import IAcousticHomingBridge, AcousticTelemetry, NavCommand
+    from acoustic_homing import IAcousticHomingBridge, AcousticTelemetry, NavCommand, MotorDirection
 """
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 # -- Constants ---------------------------------------------------------------
@@ -44,17 +46,30 @@ class AcousticTelemetry:
     a_ang: float
 
 
+class MotorDirection(str, Enum):
+    """
+    Direction Enum matching MOD-01 UART expectation format.
+    W = FORWARD, S = BACKWARD, A = LEFT, D = RIGHT, Q = STOP
+    """
+    W = 'W'
+    A = 'A'
+    S = 'S'
+    D = 'D'
+    Q = 'Q'
+
 @dataclass
 class NavCommand:
     """
     Motor navigation command to be forwarded to MOD-01 via UART.
 
     Fields:
-        direction (str): One of 'FORWARD', 'LEFT', 'RIGHT', 'STOP'.
-        speed (int):     PWM speed value (0-255).
+        direction (MotorDirection): Movement direction ('W', 'A', 'S', 'D', 'Q').
+        speed (int):                PWM speed value (0-255).
+        action_flag (int):          Actuator state (1 for On, 0 for Off, e.g. Buzzer/LED).
     """
-    direction: str
+    direction: MotorDirection
     speed: int
+    action_flag: int = 0
 
 # -- Public Interface --------------------------------------------------------
 
