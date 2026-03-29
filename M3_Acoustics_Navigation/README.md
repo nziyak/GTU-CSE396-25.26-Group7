@@ -33,13 +33,19 @@ if telemetry_data['A_Hit'] == 1:
 
 ## API Summary
 
-- `TODO: [Uğur]`
-  - Description: `acoustics_iir_filter_apply()`, `acoustics_compute_bearing()`, `acoustics_spinscan_execute()`, `acoustics_homing_navigate()` etc. to be added.
+- **Uğur Anıl Güney — `acoustics_iir.h`** (STM32 Firmware & Acoustic Processing)
+
+| Function | Parameters | Return | Description |
+|---|---|---|---|
+| `acoustics_iir_filter_apply()` | `samples: const float*`<br>`length: uint16_t`<br>`out: float*` | `acoustics_status_t` | Applies a 4th-order Digital IIR filter to raw ADC microphone array samples to attenuate gearbox/motor noise interference. |
+| `acoustics_compute_bearing()` | `mic_buffers: const float*[]`<br>`length: uint16_t`<br>`out: acoustics_result_t*` | `acoustics_status_t` | Computes source bearing (-180° to 180°) via phase-difference among the 3 MAX4466 microphones. |
+| `acoustics_spinscan_execute()` | `grid: acoustics_grid_t*` | `acoustics_status_t` | Executes a complete 360-degree rotation, pinging ultrasonics to populate the 2D arena occupancy grid. |
+| `acoustics_homing_navigate()` | `bearing_deg: float`<br>`cmd: acoustics_nav_cmd_t*` | `acoustics_status_t` | Maps a confirmed bearing angle to a Modül 1 integer motor command (0=STOP, 1=FWD, 2=BWD, 3=LFT, 4=RGT). |
 - **Evrim — `acoustic_homing.py`** (Acoustic Homing Bridge & MOD-01 Navigation Interfacing)
 
 | Function | Parameters | Return | Description |
 |---|---|---|---|
-| `process_telemetry()` | `telemetry: AcousticTelemetry` | `Optional[NavCommand]` | Parses A_Hit/A_Ang UART telemetry. Returns a `NavCommand` with `MotorDirection` (W,A,S,D,Q) and `action_flag`. |
+| `process_telemetry()` | `telemetry: AcousticTelemetry` | `Optional[NavCommand]` | Parses A_Hit/A_Ang UART telemetry. Returns a `NavCommand` with `MotorDirection` (0-4), `buzzer_on`, and `lights_on`. |
 | `notify_fsm_transition()` | `bearing: float` | `None` | Notifies MOD-04 FSM to transition from EXPLORE to ACOUSTIC_HOMING. |
 | `reset()` | `None` | `None` | Resets internal acoustic hit counter when FSM returns to EXPLORE (false positive/timeout). |
 - **Tuana — `fsm_acoustic.h`** (FSM Branching & Mode Transitions)
@@ -53,8 +59,13 @@ if telemetry_data['A_Hit'] == 1:
 | `FSM_Acoustic_ResetStreak()` | `void` | `void` | Resets hit counter and cooldown on timeout or false positive. |
 | `FSM_Acoustic_GetStateName()` | `fsm_state_t state` | `const char*` | Returns state label string for M4/M5 display. |
 
-- `TODO: [Dicle]`
-  - Description: `MapManager.ShowAcousticBeam()` etc. to be added.
+- **Dicle Çoban — `MapManager_AcousticBeam.cs`** (Unity Visualizer & Beam Mapping)
+
+| Function | Parameters | Return | Description |
+|---|---|---|---|
+| `ShowAcousticBeam()` | `data: AcousticBeamData`, `style: AcousticBeamStyle` | `void` | Renders a directional arrow or radar sweep on the 2D Top-Down Unity map when an acoustic hit is detected. |
+| `HideAcousticBeam()` | `None` | `void` | Removes the acoustic beam visualization when homing times out or finishes. |
+| `UpdateAcousticBeamAngle()` | `newBearingDeg: float` | `void` | Instantly adjusts the bearing of an already visible acoustic beam indicator (used for iterative bearing refinement). |
 
 ## Known Risks & Open Questions
 
@@ -69,6 +80,7 @@ if telemetry_data['A_Hit'] == 1:
 
 ## Version History
 
+- v0.6 (2026-03-29): Strict M1/M4 Sync implemented. `fsm_state_t` expanded from 7 to 11 states to match `M4_MainFSM.py`. `NavCommand` and `acoustics_nav_cmd_t` reverted to integer Enums (0-4) matching M1 UART, replacing `action_flag` with `buzzer_on`/`lights_on`.
 - v0.5 (2026-03-29): `acoustics_iir.h` API updated. Aligned `acoustics_nav_cmd_t` with Modül 1 UART standard ('W', 'S', 'A', 'D', 'Q') and applied `acoustics_` prefix to C functions.
 - v0.4 (2026-03-29): `acoustic_homing.py` API added. Aligned `NavCommand` with Modül 1 (W,A,S,D,Q and action flags) and updated the README contract.
 - v0.3 (2026-03-29): `fsm_acoustic.h` API added. Signatures aligned with M4_MainFSM.py and acoustic_homing.py.

@@ -3,11 +3,12 @@ File:    acoustic_homing.py
 Brief:   MOD-03 Python Bridge — Acoustic Homing & FSM Integration
 Author:  Evrim Doğa Solmaz 230104004042
 Date:    2026-03-29
-Version: 0.2
+Version: 0.3
  
 Changelog:
-v0.1 (2026-03-28) - Initial draft: interface stubs for acoustic bridge defined.
+v0.3 (2026-03-29) - Aligned MotorDirection to M1 UART ints (0-4) and added explicit `buzzer_on` / `lights_on` booleans to NavCommand.
 v0.2 (2026-03-29) - Aligned NavCommand with Modül 1 standard ('W, A, S, D, Q' and action flag).
+v0.1 (2026-03-28) - Initial draft: interface stubs for acoustic bridge defined.
 
 Consumed by: MOD-04 fsm_update loop on Raspberry Pi.
 Depends on:  acoustics_iir.h (Uğur) for bearing data via UART,
@@ -46,16 +47,16 @@ class AcousticTelemetry:
     a_ang: float
 
 
-class MotorDirection(str, Enum):
+class MotorDirection(int, Enum):
     """
-    Direction Enum matching MOD-01 UART expectation format.
-    W = FORWARD, S = BACKWARD, A = LEFT, D = RIGHT, Q = STOP
+    Direction Enum matching MOD-01 UART int format (uart_direction_t).
+    0 = STOP, 1 = FORWARD, 2 = BACKWARD, 3 = LEFT, 4 = RIGHT
     """
-    W = 'W'
-    A = 'A'
-    S = 'S'
-    D = 'D'
-    Q = 'Q'
+    STOP = 0
+    FORWARD = 1
+    BACKWARD = 2
+    LEFT = 3
+    RIGHT = 4
 
 @dataclass
 class NavCommand:
@@ -63,13 +64,15 @@ class NavCommand:
     Motor navigation command to be forwarded to MOD-01 via UART.
 
     Fields:
-        direction (MotorDirection): Movement direction ('W', 'A', 'S', 'D', 'Q').
+        direction (MotorDirection): Movement direction (0-4).
         speed (int):                PWM speed value (0-255).
-        action_flag (int):          Actuator state (1 for On, 0 for Off, e.g. Buzzer/LED).
+        buzzer_on (bool):           Trigger wake-up buzzer.
+        lights_on (bool):           Trigger SOS / Flashlight.
     """
     direction: MotorDirection
     speed: int
-    action_flag: int = 0
+    buzzer_on: bool = False
+    lights_on: bool = False
 
 # -- Public Interface --------------------------------------------------------
 

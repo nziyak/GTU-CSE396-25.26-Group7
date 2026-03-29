@@ -34,6 +34,7 @@
  *              -> fsm_acoustic_result_t { new_state, transition_fired, confirmed_bearing }
  *
  * Changelog:
+ *     v0.4 (2026-03-29) — Expanded FSM states from 7 to 11 to match new M4_MainFSM.py.
  *     v0.3 (2026-03-29) — Fixed FSM_Acoustic_Update() signature to match
  *                          M4_MainFSM.py (3 params, internal context).
  *                          Include guard aligned with acoustics_iir.h naming.
@@ -123,19 +124,23 @@ extern "C" {
  *   APPROACH_TARGET=4, VICTIM_ANALYSIS=5, RETURN_TO_HOME=6
  */
 typedef enum {
-    FSM_STATE_IDLE            = 0,  /**< Power-on, awaiting START command from operator   */
-    FSM_STATE_SPIN_MAP        = 1,  /**< Initial 360-degree ultrasonic sweep               */
-    FSM_STATE_EXPLORE         = 2,  /**< Frontier-based area patrol (default patrol mode)  */
-    FSM_STATE_ACOUSTIC_HOMING = 3,  /**< Rotating / driving toward detected sound source   */
-    FSM_STATE_APPROACH_TARGET = 4,  /**< Moving toward a priority-queue target (YOLO hit)  */
-    FSM_STATE_VICTIM_ANALYSIS = 5,  /**< Running Edge VLM / CNN on captured frame          */
-    FSM_STATE_RTH             = 6   /**< Return-to-Home (time limit or Wi-Fi loss)         */
+    FSM_STATE_IDLE            = 0,  /**< Power-on, awaiting START command   */
+    FSM_STATE_SPIN_MAP        = 1,  /**< Initial 360-degree ultrasonic sweep */
+    FSM_STATE_EXPLORE         = 2,  /**< Frontier-based patrol               */
+    FSM_STATE_ACOUSTIC_HOMING = 3,  /**< Rotating toward acoustic source     */
+    FSM_STATE_APPROACH_TARGET = 4,  /**< Moving toward YOLO target           */
+    FSM_STATE_VICTIM_ANALYSIS = 5,  /**< Running Edge VLM / CNN              */
+    FSM_STATE_EVALUATE_VICTIM = 6,  /**< Status Evaluation                   */
+    FSM_STATE_WAKEUP_PROTOCOL = 7,  /**< Execute Wake-up routine             */
+    FSM_STATE_MANUAL_OVERRIDE = 8,  /**< Operator Override                   */
+    FSM_STATE_BEACON_MODE     = 9,  /**< SOS Beacon / Power save             */
+    FSM_STATE_RTH             = 10  /**< Return-to-Home                      */
 } fsm_state_t;
 
 /**
  * @brief Total number of FSM states.
  */
-#define FSM_STATE_COUNT                 7
+#define FSM_STATE_COUNT                 11
 
 
 /* ===================================================================

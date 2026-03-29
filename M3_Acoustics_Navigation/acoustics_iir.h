@@ -9,6 +9,7 @@
  * @version 0.2
  *
  * Changelog:
+ * v0.3 (2026-03-29) - Reverted acoustics_nav_cmd_t to match M1 uart_direction_t [0-4].
  * v0.2 (2026-03-29) - Aligned acoustics_nav_cmd_t with M1 UART standard ('W', 'S', 'A', 'D', 'Q').
  *                     Renamed functions to use 'acoustics_' prefix to match header assignments.
  * v0.1 (2026-03-28) - Initial draft: IIR_Filter_Apply, Acoustic_ComputeBearing,
@@ -60,14 +61,14 @@ typedef struct {
 
 /**
  * @brief Motor direction command output from Homing_Navigate.
- *        Aligned with Modül 1 UART format ('W', 'S', 'A', 'D', 'Q').
+ *        Aligned with Modül 1 int format (0=STOP, 1=FWD, 2=BWD, 3=LFT, 4=RGT).
  */
 typedef enum {
-    ACOUSTICS_NAV_FORWARD  = 'W',
-    ACOUSTICS_NAV_BACKWARD = 'S',
-    ACOUSTICS_NAV_LEFT     = 'A',
-    ACOUSTICS_NAV_RIGHT    = 'D',
-    ACOUSTICS_NAV_STOP     = 'Q'
+    ACOUSTICS_NAV_STOP     = 0,
+    ACOUSTICS_NAV_FORWARD  = 1,
+    ACOUSTICS_NAV_BACKWARD = 2,
+    ACOUSTICS_NAV_LEFT     = 3,
+    ACOUSTICS_NAV_RIGHT    = 4
 } acoustics_nav_cmd_t;
 
 /* -- Public Functions ------------------------------------------------------ */
