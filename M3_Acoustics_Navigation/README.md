@@ -3,7 +3,7 @@
 **Purpose:** Provides the acoustic sensing and autonomous movement layer of the robot. It detects human distress calls via Acoustic Source Localization (ASL), filters motor noise using a Software-based Digital IIR Filter on the STM32, and manages spatial awareness through Spin-Scan Mapping and Acoustic Homing protocols.
 
 **Authors:**
-- Uğur Anıl Güney [Öğrenci No Yaz] (Primary — STM32 Firmware & Acoustic Processing)
+- Uğur Anıl Güney [210104004011] (Primary — STM32 Firmware & Acoustic Processing)
 - Evrim Doğa Solmaz 230104004042 (Secondary — Python Bridge & Navigation Interfacing)
 - Tuana Melisa Aksoı 230104004903 (Secondary — FSM Branching & Mode Transitions)
 - Dicle Çoban [Öğrenci No Yaz] (Secondary — Unity Visualizer & Beam Mapping)

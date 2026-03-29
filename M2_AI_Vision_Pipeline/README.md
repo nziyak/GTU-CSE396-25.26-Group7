@@ -11,7 +11,7 @@ It integrates the Pi Camera V3 to perform real-time human detection (YOLO) and u
 - **Gabil Rahimli** [230104004902] (Primary - AI Pipeline & Model Selection & Yolo Training)
 - **Evrim Doğa Solmaz** [Öğrenci Nonu Yaz] (Primary - Vision Integration & Hardware Interfacing)
 - **Tuana Melisa Aksoi** [Öğrenci Nonu Yaz] (Secondary - Model Testing & Severity Classification)
-- **Uğur Anıl Güney** [Öğrenci Nonu Yaz] (Secondary - Dataset Preparation & YOLO Training)
+- **Uğur Anıl Güney** [210104004011] (Secondary - Dataset Preparation & YOLO Training)
 - **Dicle Çoban** [Öğrenci Nonu Yaz] (Secondary - Performance Optimization & Resource Management)
 
 ---

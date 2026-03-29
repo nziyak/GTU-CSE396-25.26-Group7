@@ -5,7 +5,7 @@
 **Authors:**
 * Ömer [Öğrenci No] (Primary - Comms Bridging & JSON Telemetry)
 * Tuana [23104004903] (Primary - Offline STT Model Integration)
-* Uğur [Öğrenci No] (Secondary - Video Streaming Pipeline)
+* Uğur [210104004011] (Secondary - Video Streaming Pipeline)
 * Fatma Öztürk [230104004152] (Secondary - Operator Control Routing)
 
 **Dependencies:**
