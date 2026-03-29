@@ -12,10 +12,10 @@ It integrates the Pi Camera Module V3, performs real-time human detection using 
 
 * **Fatma Öztürk** `[230104004152]` — Primary — AI Pipeline & Model Selection
 * **Gabil Rahimli** `[230104004902]` — Primary — AI Pipeline, Model Selection & YOLO Training
-* **Evrim Doğa Solmaz** `[Student ID]` — Primary — Vision Integration & Hardware Interfacing
-* **Tuana Melisa Aksoi** `[Student ID]` — Secondary — Model Testing & Severity Classification
-* **Uğur Anıl Güney** `[Student ID]` — Secondary — Dataset Preparation & YOLO Training
-* **Dicle Çoban** `[Student ID]` — Secondary — Performance Optimization & Resource Management
+* **Evrim Doğa Solmaz** `[230104004042]` — Primary — Vision Integration & Hardware Interfacing
+* **Tuana Melisa Aksoi** `[230104004903]` — Secondary — Model Testing & Severity Classification
+* **Uğur Anıl Güney** `[210104004011]` — Secondary — Dataset Preparation & YOLO Training
+* **Dicle Çoban** `[220104004088]` — Secondary — Performance Optimization & Resource Management
 
 > Replace the placeholder student IDs before submission.
 
