@@ -128,6 +128,7 @@ Hardware Testing Checklist
 [ ] Failsafe: Decoy power cuts off gracefully during emergency stops.
 
 Version History
+
 v0.3 (2026-03-29): Merged Ziya's Power/UART interfaces with Ömer's Motor/Stuck Logic.
 
 v0.2 (2026-03-27): Updated telemetry payload to include mapping variables (Yaw, US distances).
