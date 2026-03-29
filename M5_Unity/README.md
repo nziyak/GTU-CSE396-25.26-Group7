@@ -12,10 +12,6 @@ This module provides the Unity-side operator dashboard for the rescue robot. It 
 * **Ziya** `210104004027` — Secondary — WebSocket and JSON integration
 * **Evrim Doğa Solmaz** `[230104004042]` — Secondary — Audio capture pipeline
 
-> Replace placeholder student IDs before submission.
-
----
-
 ## Dependencies
 
 ### Software
