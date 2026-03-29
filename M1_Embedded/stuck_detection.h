@@ -4,7 +4,7 @@
 /**
  * @file      stuck_detection.h
  * @brief     MPU6050 IMU-Based Stuck Detection and Recovery Logic
- * @author    Ömer [Student ID]
+ * @author    Ömer 210104004027
  * @date      2026-03-29
  * @version   0.1
  * 
