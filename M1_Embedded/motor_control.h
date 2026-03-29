@@ -4,7 +4,7 @@
 /**
  * @file      motor_control.h
  * @brief     L298N Motor Driver Control Interface for 4WD Chassis
- * @author    Ömer [Student ID]
+ * @author    Ömer 210104004027
  * @date      2026-03-29
  * @version   0.1
  * 
