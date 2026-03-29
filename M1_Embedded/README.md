@@ -61,6 +61,7 @@ int main(void) {
 ```
 
 API Summary
+
 pwr_status_t pwr_init(void)
 
 Description: Initializes power GPIO pins and sets up decoy states.
