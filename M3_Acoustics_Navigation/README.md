@@ -34,7 +34,7 @@ if telemetry_data['A_Hit'] == 1:
 ## API Summary
 
 - `TODO: [Uğur]`
-  - Description: `IIR_Filter_Apply()`, `Acoustic_ComputeBearing()`, `SpinScan_Execute()`, `Homing_Navigate()` etc. to be added.
+  - Description: `acoustics_iir_filter_apply()`, `acoustics_compute_bearing()`, `acoustics_spinscan_execute()`, `acoustics_homing_navigate()` etc. to be added.
 - **Evrim — `acoustic_homing.py`** (Acoustic Homing Bridge & MOD-01 Navigation Interfacing)
 
 | Function | Parameters | Return | Description |
@@ -69,6 +69,7 @@ if telemetry_data['A_Hit'] == 1:
 
 ## Version History
 
+- v0.5 (2026-03-29): `acoustics_iir.h` API updated. Aligned `acoustics_nav_cmd_t` with Modül 1 UART standard ('W', 'S', 'A', 'D', 'Q') and applied `acoustics_` prefix to C functions.
 - v0.4 (2026-03-29): `acoustic_homing.py` API added. Aligned `NavCommand` with Modül 1 (W,A,S,D,Q and action flags) and updated the README contract.
 - v0.3 (2026-03-29): `fsm_acoustic.h` API added. Signatures aligned with M4_MainFSM.py and acoustic_homing.py.
 - v0.2 (2026-03-28): Team list finalized. UART packet format (`|A_Hit:x|A_Ang:y|`) aligned with MOD-01/04 standards.

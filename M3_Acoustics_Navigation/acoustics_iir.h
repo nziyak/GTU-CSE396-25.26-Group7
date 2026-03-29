@@ -6,9 +6,11 @@
  * @brief   MOD-03 STM32 Acoustic Processing & Navigation — public interface
  * @author  Uğur Anıl Güney [Öğrenci No Yaz]
  * @date    2026-03-28
- * @version 0.1
+ * @version 0.2
  *
  * Changelog:
+ * v0.2 (2026-03-29) - Aligned acoustics_nav_cmd_t with M1 UART standard ('W', 'S', 'A', 'D', 'Q').
+ *                     Renamed functions to use 'acoustics_' prefix to match header assignments.
  * v0.1 (2026-03-28) - Initial draft: IIR_Filter_Apply, Acoustic_ComputeBearing,
  *                     SpinScan_Execute, Homing_Navigate stubs defined.
  */
@@ -58,12 +60,14 @@ typedef struct {
 
 /**
  * @brief Motor direction command output from Homing_Navigate.
+ *        Aligned with Modül 1 UART format ('W', 'S', 'A', 'D', 'Q').
  */
 typedef enum {
-    ACOUSTICS_NAV_FORWARD  = 0,
-    ACOUSTICS_NAV_LEFT     = 1,
-    ACOUSTICS_NAV_RIGHT    = 2,
-    ACOUSTICS_NAV_STOP     = 3
+    ACOUSTICS_NAV_FORWARD  = 'W',
+    ACOUSTICS_NAV_BACKWARD = 'S',
+    ACOUSTICS_NAV_LEFT     = 'A',
+    ACOUSTICS_NAV_RIGHT    = 'D',
+    ACOUSTICS_NAV_STOP     = 'Q'
 } acoustics_nav_cmd_t;
 
 /* -- Public Functions ------------------------------------------------------ */
@@ -76,7 +80,7 @@ typedef enum {
  * @param  out      Pointer to output buffer for filtered samples
  * @return ACOUSTICS_OK on success, negative error code otherwise
  */
-acoustics_status_t IIR_Filter_Apply(const float *samples, uint16_t length, float *out);
+acoustics_status_t acoustics_iir_filter_apply(const float *samples, uint16_t length, float *out);
 
 /**
  * @brief  Compute the bearing angle to an acoustic source via phase difference
@@ -86,7 +90,7 @@ acoustics_status_t IIR_Filter_Apply(const float *samples, uint16_t length, float
  * @param  out          Pointer to acoustics_result_t to be filled
  * @return ACOUSTICS_OK if valid bearing computed, ACOUSTICS_ERR_NO_HIT otherwise
  */
-acoustics_status_t Acoustic_ComputeBearing(const float *mic_buffers[], uint16_t length,
+acoustics_status_t acoustics_compute_bearing(const float *mic_buffers[], uint16_t length,
                                             acoustics_result_t *out);
 
 /**
@@ -95,7 +99,7 @@ acoustics_status_t Acoustic_ComputeBearing(const float *mic_buffers[], uint16_t 
  * @param  grid  Pointer to acoustics_grid_t to be populated
  * @return ACOUSTICS_OK on completion, negative error code otherwise
  */
-acoustics_status_t SpinScan_Execute(acoustics_grid_t *grid);
+acoustics_status_t acoustics_spinscan_execute(acoustics_grid_t *grid);
 
 /**
  * @brief  Generate motor navigation commands to steer robot toward acoustic source.
@@ -103,6 +107,6 @@ acoustics_status_t SpinScan_Execute(acoustics_grid_t *grid);
  * @param  cmd          Pointer to acoustics_nav_cmd_t to be filled
  * @return ACOUSTICS_OK on success, negative error code otherwise
  */
-acoustics_status_t Homing_Navigate(float bearing_deg, acoustics_nav_cmd_t *cmd);
+acoustics_status_t acoustics_homing_navigate(float bearing_deg, acoustics_nav_cmd_t *cmd);
 
 #endif /* MOD03_ACOUSTICS_IIR_H */
