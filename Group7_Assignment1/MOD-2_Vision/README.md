@@ -17,6 +17,8 @@ It integrates the Pi Camera Module V3, performs real-time human detection using 
 * **Uğur Anıl Güney** `[210104004011]` — Secondary — Dataset Preparation & YOLO Training
 * **Dicle Çoban** `[220104004088]` — Secondary — Performance Optimization & Resource Management
 
+> Replace the placeholder student IDs before submission.
+
 ---
 
 ## Dependencies
@@ -49,50 +51,73 @@ from ai_vision import VisionPipeline
 
 vision = VisionPipeline()
 
-if not vision.initialize_camera():
+status = vision.ai_vision_init()
+if status < 0:
     raise RuntimeError("Vision pipeline initialization failed.")
 
-target = vision.get_latest_target()
-if target is not None and target.severity != "NONE":
-    print(f"Victim detected — severity: {target.severity}, confidence: {target.confidence:.2f}, distance: {target.distance_cm} cm")
+vision.ai_vision_set_power_mode(False)  # Explore mode
 
-vision.pause_vision_pipeline()
+status, result = vision.ai_vision_process_frame()
+if status == 0 and result is not None and result.target_detected:
+    print("Victim detected:", result.status, result.priority, result.confidence)
+
+vision.ai_vision_preemptive_pause()
 # STT or another high-priority task can run here
-vision.resume_vision_pipeline()
+vision.ai_vision_resume()
+
+vision.ai_vision_shutdown()
 ```
 
 ---
 
 ## API Summary
 
-> **Note:** The public integration contract is defined in `ai_vision_interface.py` via the `IVisionPipeline` abstract class. The concrete implementation (`VisionPipeline` in `ai_vision.py`) must implement all four methods listed below.
-
-| Method (`IVisionPipeline`)    | Return                    | Description                                                                                   |
-| ----------------------------- | ------------------------- | --------------------------------------------------------------------------------------------- |
-| `initialize_camera()`         | `bool`                    | Warms up the Pi Camera V3 and loads YOLO / VLM weights into RAM. Returns `True` on success.  |
-| `get_latest_target()`         | `TargetData \| None`      | Returns the most recent AI classification result, or `None` if no human is currently detected.|
-| `pause_vision_pipeline()`     | `None`                    | Pauses all camera framing and AI inference. **Must** be called by Mod 4 (STT) before voice processing to free RAM / CPU. |
-| `resume_vision_pipeline()`    | `None`                    | Resumes AI inference after STT processing is complete.                                        |
+| Function / Method              | Parameters       | Return                             | Description                                                                      |
+| ------------------------------ | ---------------- | ---------------------------------- | -------------------------------------------------------------------------------- |
+| `ai_vision_init()`             | None             | `int`                              | Initializes camera-side and model-side resources for the vision pipeline         |
+| `ai_vision_set_power_mode()`   | `bool high_perf` | `None`                             | Switches between low-power exploration mode and high-performance assessment mode |
+| `ai_vision_preemptive_pause()` | None             | `None`                             | Temporarily pauses the vision pipeline to free compute / memory resources        |
+| `ai_vision_resume()`           | None             | `None`                             | Resumes the vision pipeline after a temporary pause                              |
+| `ai_vision_process_frame()`    | None             | `tuple[int, VisionResult \| None]` | Processes the current frame and returns status plus optional result object       |
+| `ai_vision_shutdown()`         | None             | `None`                             | Releases camera / model resources and safely shuts down the module               |
 
 ---
 
 ## Public Data Types
 
-### `TargetData`
+### `VisionStatus`
 
-The single public data structure returned by `get_latest_target()`. Defined in `ai_vision_interface.py`.
+Represents the victim status produced by the pipeline.
+
+Possible values:
+
+* `NONE`
+* `STANDING`
+* `LYING`
+* `TRAPPED`
+
+### `VisionPriority`
+
+Represents the priority / pin color mapping used by upper layers.
+
+Possible values:
+
+* `GREEN`
+* `YELLOW`
+* `RED`
+
+### `VisionResult`
+
+Represents the final output of one frame-processing cycle.
 
 Fields:
 
-* `pos_x: int` — Pixel X coordinate of the detected target
-* `pos_y: int` — Pixel Y coordinate of the detected target
-* `distance_cm: float` — Estimated distance from the camera in centimetres
-* `severity: str` — Victim condition classification; one of `"TRAPPED"`, `"LYING"`, `"STANDING"`, or `"NONE"`
-* `confidence: float` — AI confidence score in the range `[0.0, 1.0]`
-
----
-
-> **Compatibility note for MOD-04 / MOD-05:** Upper layers consuming victim status and priority colour must map `TargetData.severity` to their own priority enum. A shared cross-module contract for this mapping is an open question — see Known Risks section below.
+* `target_id: int`
+* `status: VisionStatus`
+* `priority: VisionPriority`
+* `confidence: float`
+* `bbox_area: int`
+* `target_detected: bool`
 
 ---
 
@@ -150,12 +175,7 @@ Handles YOLO-based human detection on camera frames and selects the best candida
 ### `victim_analyzer_internal.py`
 
 **Purpose:**
-Classifies the selected target as `TRAPPED`, `LYING`, or `STANDING` and converts the result into the internal `VisionResult` structure, which is then translated into the public `TargetData` format by the main pipeline.
-
-> **Internal types used only within MOD-02:**
-> * `VisionStatus` — `NONE`, `STANDING`, `LYING`, `TRAPPED`
-> * `VisionPriority` — `GREEN`, `YELLOW`, `RED`
-> * `VisionResult` — internal output of one frame-processing cycle (fields: `target_id`, `status`, `priority`, `confidence`, `bbox_area`, `target_detected`)
+Classifies the selected target as `TRAPPED`, `LYING`, or `STANDING` and converts the result into the public `VisionResult` structure.
 
 | Internal Function / Method       | Parameters                                                | Return           | Description                                                       |
 | -------------------------------- | --------------------------------------------------------- | ---------------- | ----------------------------------------------------------------- |
@@ -230,7 +250,6 @@ Fallback options such as a custom CNN or YOLO-Pose-based rule logic will be cons
 
 ## Version History
 
-* **v0.5 (2026-03-29)** — README corrected to match `ai_vision_interface.py` contract: API table updated to reflect `IVisionPipeline` abstract methods, Quick-Start example fixed, public data type updated from `VisionResult` to `TargetData`, internal types (`VisionStatus`, `VisionPriority`, `VisionResult`) moved under `victim_analyzer_internal.py` section
 * **v0.4 (2026-03-29)** — README updated to reflect Python-based implementation structure and final public/internal module decomposition
 * **v0.3 (2026-03-29)** — README updated to match final public API and internal module decomposition
 * **v0.2 (2026-03-28)** — Full team list updated; victim status and priority mapping aligned with integration planning
