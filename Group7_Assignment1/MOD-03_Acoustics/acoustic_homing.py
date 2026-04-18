@@ -110,3 +110,183 @@ class IAcousticHomingBridge(ABC):
         Called when FSM returns to EXPLORE after false positive or timeout.
         """
         pass
+
+
+# -- Concrete Implementation -------------------------------------------------
+
+# Additional constants for homing behaviour
+# Aligned with fsm_acoustic.h FSM_ACOUSTIC_HOMING_TIMEOUT_MS = 30000
+HOMING_TIMEOUT_SEC: float = 30.0
+"""Maximum seconds in ACOUSTIC_HOMING before auto-reset."""
+
+HOMING_DEFAULT_SPEED: int = 150
+"""Default PWM speed (0-255) when driving toward the acoustic source."""
+
+HOMING_APPROACH_SPEED: int = 100
+"""Reduced PWM speed when bearing is within tolerance (careful approach)."""
+
+import time
+import logging
+
+logger = logging.getLogger("MOD03.acoustic_homing")
+
+
+class AcousticHomingBridge(IAcousticHomingBridge):
+    """
+    Concrete implementation of the Acoustic Homing Bridge.
+    Author: Evrim Doğa Solmaz 230104004042
+
+    Consumed by MOD-04's fsm_update loop on Raspberry Pi.
+
+    Behaviour:
+        1. Accumulates consecutive A_Hit=True readings.
+        2. Once HOMING_MIN_HIT_CONFIRMS (3) consecutive hits are reached,
+           computes a NavCommand based on the bearing angle and notifies
+           MOD-04 FSM to transition EXPLORE -> ACOUSTIC_HOMING.
+        3. Subsequent calls while in homing mode continue to refine the
+           bearing and issue corrective motor commands.
+        4. reset() is called by MOD-04 when homing times out or a false
+           positive is identified.
+    """
+
+    def __init__(self, fsm_transition_callback=None):
+        """
+        @param fsm_transition_callback  Optional callable(bearing: float)
+               provided by MOD-04 to trigger FSM state change.
+               If None, notify_fsm_transition only logs the event.
+        """
+        self._hit_streak: int = 0
+        self._last_bearing: float = 0.0
+        self._is_homing: bool = False
+        self._homing_start_time: float = 0.0
+        self._fsm_callback = fsm_transition_callback
+
+    def process_telemetry(self, telemetry: AcousticTelemetry) -> Optional[NavCommand]:
+        """
+        Process incoming acoustic telemetry from MOD-04.
+
+        Decision flow (aligned with fsm_acoustic.h FSM_Acoustic_Update):
+          1. If a_hit is False  -> reset streak, return None.
+          2. If a_hit is True   -> increment streak.
+             a. If streak < HOMING_MIN_HIT_CONFIRMS -> return None (wait).
+             b. If streak >= threshold AND not yet homing ->
+                notify FSM transition, enter homing mode.
+             c. Compute NavCommand from bearing angle:
+                - |bearing| <= tolerance  -> FORWARD  (source is ahead)
+                - bearing > tolerance     -> RIGHT    (source is to the right)
+                - bearing < -tolerance    -> LEFT     (source is to the left)
+          3. If homing has timed out -> reset and return STOP.
+
+        @param  telemetry  Parsed AcousticTelemetry from UART packet
+        @return NavCommand to send to MOD-01, or None if no action needed
+        """
+        # --- No hit: reset streak and do nothing ---
+        if not telemetry.a_hit:
+            if self._hit_streak > 0:
+                logger.debug("Acoustic hit streak broken at %d", self._hit_streak)
+            self._hit_streak = 0
+            return None
+
+        # --- Validate bearing range (aligned with FSM_BEARING_MIN/MAX_DEG) ---
+        if not (-180.0 <= telemetry.a_ang <= 180.0):
+            logger.warning("Invalid bearing %.1f° — ignoring hit", telemetry.a_ang)
+            return None
+
+        # --- Accumulate hits ---
+        self._hit_streak += 1
+        self._last_bearing = telemetry.a_ang
+        logger.debug("Acoustic hit streak: %d / %d  bearing: %.1f°",
+                      self._hit_streak, HOMING_MIN_HIT_CONFIRMS, telemetry.a_ang)
+
+        # --- Not enough confirmations yet ---
+        if self._hit_streak < HOMING_MIN_HIT_CONFIRMS:
+            return None
+
+        # --- Check homing timeout ---
+        if self._is_homing:
+            elapsed = time.monotonic() - self._homing_start_time
+            if elapsed >= HOMING_TIMEOUT_SEC:
+                logger.info("Acoustic homing timed out after %.1fs — resetting", elapsed)
+                self.reset()
+                return NavCommand(
+                    direction=MotorDirection.STOP,
+                    speed=0,
+                    buzzer_on=False,
+                    lights_on=False,
+                )
+
+        # --- First time reaching threshold: trigger FSM transition ---
+        if not self._is_homing:
+            self._is_homing = True
+            self._homing_start_time = time.monotonic()
+            self.notify_fsm_transition(telemetry.a_ang)
+
+        # --- Compute motor command from bearing ---
+        return self._bearing_to_nav_command(telemetry.a_ang)
+
+    def notify_fsm_transition(self, bearing: float) -> None:
+        """
+        Notify MOD-04 FSM to transition from EXPLORE to ACOUSTIC_HOMING.
+        If a callback was provided at construction, it is invoked.
+        Otherwise, only a log message is produced (MOD-04 polls the result).
+
+        @param  bearing  Confirmed bearing angle to acoustic source (degrees)
+        """
+        logger.info("FSM transition requested: EXPLORE -> ACOUSTIC_HOMING  bearing=%.1f°", bearing)
+
+        if self._fsm_callback is not None:
+            try:
+                self._fsm_callback(bearing)
+            except Exception as exc:
+                logger.error("FSM transition callback failed: %s", exc)
+
+    def reset(self) -> None:
+        """
+        Reset internal hit counter and homing state.
+        Called when FSM returns to EXPLORE after timeout or false positive.
+        Aligned with fsm_acoustic.h FSM_Acoustic_ResetStreak().
+        """
+        logger.info("Acoustic homing bridge reset (was homing=%s, streak=%d)",
+                     self._is_homing, self._hit_streak)
+        self._hit_streak = 0
+        self._last_bearing = 0.0
+        self._is_homing = False
+        self._homing_start_time = 0.0
+
+    # -- Private Helpers ------------------------------------------------------
+
+    def _bearing_to_nav_command(self, bearing_deg: float) -> NavCommand:
+        """
+        Convert a bearing angle to a NavCommand.
+
+        Logic (aligned with fsm_acoustic.h FSM_BEARING_DEAD_ZONE_DEG = 10°):
+          - |bearing| <= HOMING_BEARING_TOLERANCE_DEG -> FORWARD (source ahead)
+          - bearing > 0 (positive = right)            -> RIGHT turn
+          - bearing < 0 (negative = left)             -> LEFT turn
+
+        Activates buzzer and lights when driving forward toward confirmed source.
+        """
+        if abs(bearing_deg) <= HOMING_BEARING_TOLERANCE_DEG:
+            # Source is roughly ahead — drive forward carefully
+            return NavCommand(
+                direction=MotorDirection.FORWARD,
+                speed=HOMING_APPROACH_SPEED,
+                buzzer_on=True,
+                lights_on=True,
+            )
+        elif bearing_deg > 0:
+            # Source is to the right — turn right
+            return NavCommand(
+                direction=MotorDirection.RIGHT,
+                speed=HOMING_DEFAULT_SPEED,
+                buzzer_on=False,
+                lights_on=True,
+            )
+        else:
+            # Source is to the left — turn left
+            return NavCommand(
+                direction=MotorDirection.LEFT,
+                speed=HOMING_DEFAULT_SPEED,
+                buzzer_on=False,
+                lights_on=True,
+            )
