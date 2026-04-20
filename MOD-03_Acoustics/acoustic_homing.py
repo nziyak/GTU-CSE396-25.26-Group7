@@ -3,9 +3,12 @@ File:    acoustic_homing.py
 Brief:   MOD-03 Python Bridge — Acoustic Homing & FSM Integration
 Author:  Evrim Doğa Solmaz 230104004042
 Date:    2026-03-29
-Version: 0.3
+Version: 0.4
  
 Changelog:
+v0.4 (2026-04-20) - Added parse_uart_telemetry() to extract A_Hit/A_Ang from
+                    raw MOD-01 UART pipe-delimited string.  Added convenience
+                    method process_uart_line() on AcousticHomingBridge.
 v0.3 (2026-03-29) - Aligned MotorDirection to M1 UART ints (0-4) and added explicit `buzzer_on` / `lights_on` booleans to NavCommand.
 v0.2 (2026-03-29) - Aligned NavCommand with Modül 1 standard ('W, A, S, D, Q' and action flag).
 v0.1 (2026-03-28) - Initial draft: interface stubs for acoustic bridge defined.
@@ -22,6 +25,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+import re
 
 # -- Constants ---------------------------------------------------------------
 
@@ -45,6 +49,53 @@ class AcousticTelemetry:
     """
     a_hit: bool
     a_ang: float
+
+
+# -- UART String Parser ------------------------------------------------------
+
+# Precompiled regex patterns for the pipe-delimited telemetry format
+# Expected format: ... |A_Hit:0| ... |A_Ang:-45.3| ...
+_RE_A_HIT = re.compile(r'\|A_Hit:(\d)\|')
+_RE_A_ANG = re.compile(r'\|A_Ang:([\-+]?\d+\.?\d*)\|')
+
+
+def parse_uart_telemetry(raw_line: str) -> Optional['AcousticTelemetry']:
+    """
+    Parse the raw UART telemetry string from MOD-01/STM32 and extract
+    acoustic fields (A_Hit, A_Ang) into an AcousticTelemetry dataclass.
+
+    UART telemetry format (MOD-01 pipe-delimited, \n terminated):
+        |Temp:25.3|Smoke:0|Stuck:0|A_Hit:1|A_Ang:45.0|Yaw:12.5|USF:30|USB:50|USL:20|USR:40|
+
+    This function only extracts the acoustic-relevant fields:
+        A_Hit  — 0 or 1  (mapped to bool)
+        A_Ang  — float bearing in degrees, -180.0 to +180.0
+
+    If either field is missing from the string, returns None so the
+    caller can gracefully skip non-acoustic packets.
+
+    @param  raw_line  Raw UART string received from STM32 via serial
+    @return AcousticTelemetry if both fields found, None otherwise
+
+    Usage:
+        line = serial_port.readline().decode()
+        telemetry = parse_uart_telemetry(line)
+        if telemetry is not None:
+            nav = bridge.process_telemetry(telemetry)
+    """
+    hit_match = _RE_A_HIT.search(raw_line)
+    ang_match = _RE_A_ANG.search(raw_line)
+
+    if hit_match is None or ang_match is None:
+        return None
+
+    try:
+        a_hit = int(hit_match.group(1)) != 0
+        a_ang = float(ang_match.group(1))
+    except (ValueError, IndexError):
+        return None
+
+    return AcousticTelemetry(a_hit=a_hit, a_ang=a_ang)
 
 
 class MotorDirection(int, Enum):
@@ -252,6 +303,23 @@ class AcousticHomingBridge(IAcousticHomingBridge):
         self._last_bearing = 0.0
         self._is_homing = False
         self._homing_start_time = 0.0
+
+    # -- Convenience: parse + process in one call -----------------------------
+
+    def process_uart_line(self, raw_line: str) -> Optional[NavCommand]:
+        """
+        One-shot convenience: parse a raw UART string and process it.
+
+        Combines parse_uart_telemetry() + process_telemetry() so that
+        MOD-04's serial loop can call a single method per line.
+
+        @param  raw_line  Raw UART string from STM32
+        @return NavCommand if acoustic action needed, None otherwise
+        """
+        telemetry = parse_uart_telemetry(raw_line)
+        if telemetry is None:
+            return None
+        return self.process_telemetry(telemetry)
 
     # -- Private Helpers ------------------------------------------------------
 
