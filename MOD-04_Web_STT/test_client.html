@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MOD-04 Test İstemcisi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #log { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; }
+        .btn { padding: 10px 15px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+    </style>
+    <script type="text/javascript" charset="utf-8">
+        document.addEventListener("DOMContentLoaded", function() {
+            // Sunucuya bağlan (varsayılan localhost:5001)
+            var socket = io('http://localhost:5001');
+            
+            socket.on('connect', function() {
+                document.getElementById('status').innerText = 'Bağlandı! 🟢';
+            });
+            
+            socket.on('disconnect', function() {
+                document.getElementById('status').innerText = 'Bağlantı Kesildi! 🔴';
+            });
+            
+            // Telemetri verisini dinle
+            socket.on('telemetry_update', function(data) {
+                var logDiv = document.getElementById('log');
+                var timestamp = new Date().toLocaleTimeString();
+                logDiv.innerHTML = `<b>[${timestamp}]</b> ${JSON.stringify(data)}<br>` + logDiv.innerHTML;
+            });
+            
+            // Butona basıldığında komut gönder
+            document.getElementById('sendCmdBtn').onclick = function() {
+                var cmd = { action: 'MOVE_FORWARD', speed: 50 };
+                socket.emit('operator_command', cmd);
+                console.log("Komut gönderildi:", cmd);
+                alert("Komut sunucuya gönderildi! Sunucu terminalini kontrol edin.");
+            };
+        });
+    </script>
+</head>
+<body>
+    <h2>MOD-04 WebSocket Test İstemcisi (Unity Simülasyonu)</h2>
+    <p><b>Sunucu Durumu:</b> <span id="status">Bağlanıyor... 🟡</span></p>
+    
+    <button id="sendCmdBtn" class="btn">Örnek Operatör Komutu Gönder (İleri)</button>
+    
+    <hr>
+    <h3>Canlı Telemetri Akışı:</h3>
+    <div id="log"><i>Veri bekleniyor...</i></div>
+</body>
+</html>
