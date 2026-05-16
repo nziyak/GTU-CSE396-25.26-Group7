@@ -24,14 +24,9 @@ public class AudioManager
     public event Action<byte[]> OnAudioBlobReady;
     public event Action<AudioCaptureState> OnCaptureStateChanged;
 
-    private INetworkClient networkClient;
     private AudioCaptureState currentState = AudioCaptureState.Idle;
     private AudioClip recordingClip;
     private string microphoneDevice;
-
-    public void SetNetworkClient(INetworkClient client) { 
-        networkClient = client;
-    }
 
     public void StartRecording() { 
         if (currentState != AudioCaptureState.Idle)
@@ -92,13 +87,6 @@ public class AudioManager
 
         SetState(AudioCaptureState.Sending);
         OnAudioBlobReady?.Invoke(wavData);
-
-        // Send directly to network if client is available
-        if (networkClient != null)
-        {
-            networkClient.SendAudioBlob(wavData);
-            Debug.Log($"AudioManager: Sent {wavData.Length} bytes to network.");
-        }
 
         SetState(AudioCaptureState.Idle);
     }
@@ -167,14 +155,4 @@ public class AudioManager
         }
     }
 
-    /// <summary>
-    /// Overload kept for backward compatibility with the original signature.
-    /// Internal helper to encode raw microphone data to PCM .wav format.
-    /// This demonstrates the internal audio pipeline separation.
-    /// </summary>
-    private byte[] EncodeToWav(object clip) { 
-        // Legacy stub — real encoding uses the typed overload above.
-        Debug.LogWarning("AudioManager: EncodeToWav(object) called — use the typed overload instead.");
-        return new byte[0];
-    }
 }

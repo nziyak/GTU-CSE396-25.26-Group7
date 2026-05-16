@@ -3,13 +3,14 @@
 
 /**
  * @file    environment_sensors.h
- * @brief   Environmental sensor interface for DHT22 and MQ-2 readings
+ * @brief   Environmental sensor interface for DHT11 and MQ-2 readings
  * @author  Gabil Rahimli 230104004902
  * @date    2026-03-29
  * @version 0.1
  *
  * Changelog:
- *   v0.1 - Initial draft for DHT22 temperature/humidity and MQ-2 smoke sensor interface.
+ *   v0.1 - Initial draft for DHT11 temperature/humidity and MQ-2 smoke sensor interface.
+ *   v0.2 - Updated DHT22 to DHT11 for v4 hardware scheme.
  */
 
 #include <stdint.h>
@@ -22,7 +23,7 @@
 #define ENV_SENSOR_ERR_READ       -2
 #define ENV_SENSOR_ERR_INVALID    -3
 
-#define ENV_SENSOR_DHT22_ID        1
+#define ENV_SENSOR_DHT11_ID        1
 #define ENV_SENSOR_MQ2_ID          2
 
 #define ENV_SENSOR_MAX_TEMP_C      80.0f
@@ -35,7 +36,7 @@
  */
 typedef enum
 {
-    ENV_SENSOR_TYPE_DHT22 = 0,
+    ENV_SENSOR_TYPE_DHT11 = 0,
     ENV_SENSOR_TYPE_MQ2   = 1
 } env_sensor_type_t;
 
@@ -47,8 +48,8 @@ typedef enum
  */
 typedef struct
 {
-    float    temperature_c;   /**< Temperature in Celsius from DHT22 */
-    float    humidity_pct;    /**< Relative humidity percentage from DHT22 */
+    float    temperature_c;   /**< Temperature in Celsius from DHT11 */
+    float    humidity_pct;    /**< Relative humidity percentage from DHT11 */
     uint16_t smoke_raw;       /**< Raw analog smoke/gas reading from MQ-2 */
     bool     smoke_alert;     /**< Threshold-based smoke alert flag */
     uint32_t timestamp_ms;    /**< Timestamp in milliseconds since boot */
@@ -59,20 +60,20 @@ typedef struct
 /**
  * @brief  Initialize all environmental sensors used by the module.
  *
- * This function prepares DHT22 and MQ-2 related hardware resources.
+ * This function prepares DHT11 and MQ-2 related hardware resources.
  *
  * @return ENV_SENSOR_OK on success, negative error code otherwise.
  */
 int env_sensors_init(void);
 
 /**
- * @brief  Read DHT22 temperature and humidity values.
+ * @brief  Read DHT11 temperature and humidity values.
  *
  * @param  temperature_c_out Pointer to temperature output in Celsius.
  * @param  humidity_pct_out Pointer to humidity output in percentage.
  * @return ENV_SENSOR_OK on success, negative error code otherwise.
  */
-int env_read_dht22(float *temperature_c_out, float *humidity_pct_out);
+int env_read_dht11(float *temperature_c_out, float *humidity_pct_out);
 
 /**
  * @brief  Read raw MQ-2 smoke/gas sensor value.

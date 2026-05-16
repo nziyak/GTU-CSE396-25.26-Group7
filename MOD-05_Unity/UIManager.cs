@@ -8,6 +8,8 @@ public static class UIManagerConstants
 {
     public const string SMOKE_DETECTED_TEXT = "SMOKE DETECTED";  // Warning label shown on HUD
     public const string SMOKE_CLEAR_TEXT    = "SMOKE CLEAR";     // Normal label shown on HUD
+    public const string STUCK_DETECTED_TEXT = "ROBOT STUCK";
+    public const string STUCK_CLEAR_TEXT    = "MOTION NORMAL";
     public const string TEMPERATURE_UNIT    = "°C";
 }
 
@@ -20,6 +22,7 @@ public class UIManager : MonoBehaviour
     [Header("HUD Labels")]
     [SerializeField] private Text temperatureText;
     [SerializeField] private Text smokeStatusText;
+    [SerializeField] private Text stuckStatusText;
     [SerializeField] private Text victimStatusText;
     [SerializeField] private Text pttStateText;
 
@@ -30,6 +33,11 @@ public class UIManager : MonoBehaviour
     [Header("PTT Labels")]
     [SerializeField] private string idlePttText = string.Empty;
     [SerializeField] private string activePttText = "Recording...";
+
+    private void Awake()
+    {
+        AutoBindMissingLabels();
+    }
 
     /// Updates the temperature label on the HUD.
     /// Displays value in Celsius appended with the degree symbol (e.g., "37.2 °C").
@@ -60,6 +68,22 @@ public class UIManager : MonoBehaviour
         smokeStatusText.color = smokeDetected ? smokeWarningColor : normalTextColor;
     }
 
+    /// Updates the stuck-status indicator on the HUD.
+    /// Shows a warning when the robot reports a physical stuck condition.
+    /// <param name="isStuck">True if robot motion is blocked despite motor activity</param>
+    public void UpdateStuckStatus(bool isStuck)
+    {
+        if (stuckStatusText == null)
+        {
+            return;
+        }
+
+        stuckStatusText.text = isStuck
+            ? UIManagerConstants.STUCK_DETECTED_TEXT
+            : UIManagerConstants.STUCK_CLEAR_TEXT;
+        stuckStatusText.color = isStuck ? smokeWarningColor : normalTextColor;
+    }
+
     /// Updates the victim status label on the HUD.
     /// Displays the enum name as a string ("TRAPPED", "LYING", "STANDING", "NONE") -> I explained in MapManager
     /// <param name="status">AI-classified victim status (from TelemetryData.victimStatus)</param>
@@ -78,12 +102,14 @@ public class UIManager : MonoBehaviour
     /// Internal flow:
     ///   1. UpdateTemperature(data.temperature)
     ///   2. UpdateSmokeStatus(data.smokeDetected)
-    ///   3. UpdateVictimStatus(data.victimStatus)
+    ///   3. UpdateStuckStatus(data.isStuck)
+    ///   4. UpdateVictimStatus(data.victimStatus)
     /// <param name="data">Full telemetry packet received from INetworkClient.OnTelemetryReceived</param>
     public void UpdateHUD(TelemetryData data)
     {
         UpdateTemperature(data.temperature);
         UpdateSmokeStatus(data.smokeDetected);
+        UpdateStuckStatus(data.isStuck);
         UpdateVictimStatus(data.victimStatus);
     }
 
@@ -123,5 +149,50 @@ public class UIManager : MonoBehaviour
             default:
                 return normalTextColor;
         }
+    }
+
+    private void AutoBindMissingLabels()
+    {
+        if (temperatureText == null)
+        {
+            temperatureText = FindTextByName("TemperatureText", "Temperature");
+        }
+
+        if (smokeStatusText == null)
+        {
+            smokeStatusText = FindTextByName("SmokeStatusText", "SmokeStatus");
+        }
+
+        if (stuckStatusText == null)
+        {
+            stuckStatusText = FindTextByName("StuckStatusText", "RobotStatusText", "StuckStatus");
+        }
+
+        if (victimStatusText == null)
+        {
+            victimStatusText = FindTextByName("VictimStatusText", "VictimStatus");
+        }
+
+        if (pttStateText == null)
+        {
+            pttStateText = FindTextByName("PTTStateText", "PushToTalkText", "PTTStatus");
+        }
+    }
+
+    private Text FindTextByName(params string[] names)
+    {
+        Text[] labels = FindObjectsOfType<Text>(true);
+        for (int i = 0; i < labels.Length; i++)
+        {
+            for (int j = 0; j < names.Length; j++)
+            {
+                if (labels[i].name == names[j])
+                {
+                    return labels[i];
+                }
+            }
+        }
+
+        return null;
     }
 }

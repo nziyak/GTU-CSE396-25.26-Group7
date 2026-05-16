@@ -1,2 +1,50 @@
-.DS_Store__pycache__/
-*.pyc
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Downloaded AI Models / Large Files
+vosk-model/
+vosk-model-small-*/
+*.zip
+*.tar.gz
+
+# Unity (Temel)
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+Logs/
+UserSettings/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# VS Code / IDE
+.vscode/
+.idea/

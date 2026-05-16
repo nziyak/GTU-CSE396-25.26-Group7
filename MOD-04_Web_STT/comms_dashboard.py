@@ -1,20 +1,29 @@
 import base64
-from typing import Dict, Any
+from typing import Callable, Dict, Any, Optional
 # pyrefly: ignore [missing-import]
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
 from comms_dashboard_interface import IWebDashboard, AugmentedStatusReport
+from stt_engine_interface import ISTTEngine, VoiceCommandData
 
 class WebDashboard(IWebDashboard):
     """
     @brief Flask ve Flask-SocketIO kullanarak Unity ve Operatör kontrol arayüzü ile 
            haberleşmeyi sağlayan web dashboard sınıfı.
     """
-    def __init__(self):
+    def __init__(
+        self,
+        stt_engine: Optional[ISTTEngine] = None,
+        pause_vision_callback: Optional[Callable[[], None]] = None,
+        resume_vision_callback: Optional[Callable[[], None]] = None
+    ):
         # Flask uygulamasını başlatıyoruz
         self.app = Flask(__name__)
         # WebSocket sunucusunu başlatıyoruz. Tüm origin'lere izin veriyoruz (Unity için gerekli)
         self.socketio = SocketIO(self.app, cors_allowed_origins="*")
+        self.stt_engine = stt_engine
+        self.pause_vision_callback = pause_vision_callback
+        self.resume_vision_callback = resume_vision_callback
         
         self._setup_routes()
 
@@ -37,6 +46,12 @@ class WebDashboard(IWebDashboard):
             """Unity'den veya Web arayüzünden gelen manuel override komutlarını yakalar."""
             print(f"[WebDashboard] 'operator_command' eventi alındı: {data}")
             self.on_operator_command_received(data)
+
+        @self.socketio.on('audio_received')
+        def handle_audio_received(data):
+            """Unity Push-to-Talk ses paketini yakalar ve STT işlem hattına yönlendirir."""
+            print("[WebDashboard] 'audio_received' eventi alındı.")
+            self.on_audio_blob_received(data)
 
     def start_server(self, host: str = "0.0.0.0", port: int = 5000) -> None:
         """
@@ -75,6 +90,46 @@ class WebDashboard(IWebDashboard):
         
         self.socketio.emit('video_frame', {'image': data_url})
 
+    def on_audio_blob_received(self, audio_payload: Dict[str, Any]) -> None:
+        """
+        @brief Unity'den gelen base64 WAV sesini STT motoruna gönderir.
+        """
+        if self.stt_engine is None:
+            print("[STT] Ses paketi alındı fakat STT motoru bağlı değil.")
+            emit('stt_result', {
+                'ok': False,
+                'error': 'STT engine is not configured.'
+            })
+            return
+
+        try:
+            wav_bytes = self._decode_audio_payload(audio_payload)
+            command = self._run_stt_safely(wav_bytes)
+        except Exception as exc:
+            print(f"[STT] Ses işleme hatası: {exc}")
+            emit('stt_result', {
+                'ok': False,
+                'error': str(exc)
+            })
+            return
+
+        command_payload = {
+            'override': True,
+            'cmd': command.intent,
+            'source': 'stt',
+            'raw_text': command.raw_text,
+            'confidence': command.confidence
+        }
+
+        print(f"[STT] Komut üretildi: {command_payload}")
+        emit('stt_result', {
+            'ok': True,
+            'raw_text': command.raw_text,
+            'intent': command.intent,
+            'confidence': command.confidence
+        })
+        self.on_operator_command_received(command_payload)
+
     def on_operator_command_received(self, command_payload: Dict[str, Any]) -> None:
         """
         @brief Operatörden gelen komutu yakalayıp FSM'e (Mod 6) iletmek üzere hazırlanan callback.
@@ -82,3 +137,26 @@ class WebDashboard(IWebDashboard):
         """
         print(f"[Dashboard Callback] Operatör Override Komutu Yakalandı: {command_payload}")
         # Bu kısımda gerçek sistem entegrasyonu (örneğin event_bus'a veya FSM kuyruğuna yazma) yapılır.
+
+    def _decode_audio_payload(self, audio_payload: Dict[str, Any]) -> bytes:
+        if not isinstance(audio_payload, dict):
+            raise ValueError("Audio payload must be a dictionary.")
+
+        encoded_audio = audio_payload.get('data')
+        if not encoded_audio:
+            raise ValueError("Audio payload missing 'data' field.")
+
+        if isinstance(encoded_audio, str) and ',' in encoded_audio:
+            encoded_audio = encoded_audio.split(',', 1)[1]
+
+        return base64.b64decode(encoded_audio, validate=True)
+
+    def _run_stt_safely(self, wav_bytes: bytes) -> VoiceCommandData:
+        try:
+            if self.pause_vision_callback is not None:
+                self.pause_vision_callback()
+
+            return self.stt_engine.process_audio_blob(wav_bytes)
+        finally:
+            if self.resume_vision_callback is not None:
+                self.resume_vision_callback()
