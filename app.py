@@ -12,9 +12,30 @@ from comms_dashboard import WebDashboard
 from comms_dashboard_interface import AugmentedStatusReport
 from stt_engine import STTEngine
 
+BASE_DIR = os.path.dirname(__file__)
+
 def fsm_transition_callback(bearing: float):
     """MOD-03'ten gelen FSM durum değiştirme isteğini yakalar."""
     print(f"\n[FSM] *** DURUM DEĞİŞİKLİĞİ: EXPLORE -> ACOUSTIC_HOMING (Açı: {bearing:.1f}°) ***\n")
+
+def pause_vision_for_stt():
+    """STT çalışırken MOD-02 vision pipeline'ını durdurmak için entegrasyon kancası."""
+    print("[MOD-02] STT için vision pipeline pause isteği gönderildi.")
+
+def resume_vision_after_stt():
+    """STT tamamlandıktan sonra MOD-02 vision pipeline'ını devam ettirmek için entegrasyon kancası."""
+    print("[MOD-02] STT sonrası vision pipeline resume isteği gönderildi.")
+
+def initialize_stt_engine():
+    """Vosk STT motorunu yükler; yükleme başarısızsa dashboard STT'siz çalışır."""
+    stt_model_path = os.path.join(BASE_DIR, "MOD-04_Web_STT", "vosk-model")
+    stt_engine = STTEngine()
+
+    if stt_engine.load_offline_model(stt_model_path):
+        return stt_engine
+
+    print("[STT] Model yüklenemedi. Audio eventleri reddedilecek.")
+    return None
 
 def simulate_robot_loop(dashboard: WebDashboard, acoustic_bridge: AcousticHomingBridge):
     """
@@ -75,8 +96,13 @@ def simulate_robot_loop(dashboard: WebDashboard, acoustic_bridge: AcousticHoming
 if __name__ == "__main__":
     print("=== ANA SİSTEM BAŞLATILIYOR (MOD-03 + MOD-04 + MOD-05) ===")
     
-    # 1. Dashboard Başlat
-    dashboard = WebDashboard()
+    # 1. STT ve Dashboard Başlat
+    stt_engine = initialize_stt_engine()
+    dashboard = WebDashboard(
+        stt_engine=stt_engine,
+        pause_vision_callback=pause_vision_for_stt,
+        resume_vision_callback=resume_vision_after_stt
+    )
     
     # 2. Akustik Köprüyü Başlat (Callback bağlayarak)
     acoustic_bridge = AcousticHomingBridge(fsm_transition_callback=fsm_transition_callback)

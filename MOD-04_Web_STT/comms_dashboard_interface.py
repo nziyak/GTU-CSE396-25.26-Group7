@@ -60,6 +60,14 @@ class IWebDashboard(ABC):
         pass
 
     @abstractmethod
+    def on_audio_blob_received(self, audio_payload: Dict[str, Any]) -> None:
+        """
+        @brief Callback triggered when Unity sends a Push-to-Talk audio blob.
+        @param audio_payload Dictionary containing base64 WAV data and metadata.
+        """
+        pass
+
+    @abstractmethod
     def on_operator_command_received(self, command_payload: Dict[str, Any]) -> None:
         """
         @brief Callback triggered when an operator sends a manual override command.
