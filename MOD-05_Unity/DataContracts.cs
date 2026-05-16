@@ -51,4 +51,7 @@ public struct TelemetryData
 
     /// <summary> Bearing angle to the acoustic source in degrees (-180.0 to +180.0) </summary>
     public float acousticAngle;
+
+    /// <summary> True if the robot is physically stuck and needs operator intervention </summary>
+    public bool isStuck;
 }
