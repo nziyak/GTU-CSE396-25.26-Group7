@@ -16,8 +16,13 @@ using UnityEngine;
 public class RobotManager : MonoBehaviour
 {
     [Header("Connection")]
-    [SerializeField] private string serverUrl = "ws://localhost:5001";
+    [SerializeField] private string serverUrl = "ws://192.168.1.10:5000";
     [SerializeField] private bool connectOnStart = true;
+
+    [Header("Mocking (Demo Only)")]
+    [SerializeField] private bool useMockFileData = false;
+    [SerializeField] private string mockFileName = "mock_telemetry.json";
+    [SerializeField] private float mockUpdateInterval = 1.0f;
 
     [Header("Managers")]
     [SerializeField] private MapManager mapManager;
@@ -46,20 +51,43 @@ public class RobotManager : MonoBehaviour
         {
             acousticBeamManager = FindObjectOfType<MapManager_AcousticBeam>();
         }
+
+        if (audioManager == null)
+        {
+            audioManager = new AudioManager();
+        }
     }
 
     private void Start()
     {
-        networkClient = new WebSocketClient();
+        if (useMockFileData)
+        {
+            Debug.Log("RobotManager: Using mock file data mode.");
+            networkClient = new FileNetworkClient(mockUpdateInterval);
+
+            // Check for potential interference and automatically disable it
+            MockTelemetryTester tester = FindObjectOfType<MockTelemetryTester>();
+            if (tester != null && tester.enabled)
+            {
+                Debug.LogWarning("RobotManager: Automatically disabling MockTelemetryTester to prevent interference with file-based mock data.");
+                tester.enabled = false;
+            }
+        }
+        else
+        {
+            Debug.Log("RobotManager: Using real WebSocket client mode.");
+            networkClient = new WebSocketClient();
+        }
+
         networkClient.OnTelemetryReceived += HandleTelemetryReceived;
 
         if (audioManager != null)
         {
-            audioManager.SetNetworkClient(networkClient);
             audioManager.OnAudioBlobReady += HandleAudioBlobReady;
+            audioManager.OnCaptureStateChanged += HandleAudioCaptureStateChanged;
         }
 
-        if (connectOnStart)
+        if (connectOnStart || useMockFileData)
         {
             Connect();
         }
@@ -70,6 +98,7 @@ public class RobotManager : MonoBehaviour
         if (audioManager != null)
         {
             audioManager.OnAudioBlobReady -= HandleAudioBlobReady;
+            audioManager.OnCaptureStateChanged -= HandleAudioCaptureStateChanged;
         }
 
         if (networkClient != null)
@@ -83,10 +112,20 @@ public class RobotManager : MonoBehaviour
     {
         if (networkClient == null)
         {
+            Debug.LogError("RobotManager: networkClient is null in Connect().");
             return;
         }
 
-        networkClient.Connect(serverUrl);
+        if (useMockFileData)
+        {
+            Debug.Log($"RobotManager: Connecting to mock file '{mockFileName}'...");
+            networkClient.Connect(mockFileName);
+        }
+        else
+        {
+            Debug.Log($"RobotManager: Connecting to server URL '{serverUrl}'...");
+            networkClient.Connect(serverUrl);
+        }
     }
 
     public void Disconnect()
@@ -134,19 +173,22 @@ public class RobotManager : MonoBehaviour
         if (audioManager != null)
         {
             audioManager.OnAudioBlobReady -= HandleAudioBlobReady;
+            audioManager.OnCaptureStateChanged -= HandleAudioCaptureStateChanged;
         }
 
         audioManager = manager;
 
         if (audioManager != null)
         {
-            audioManager.SetNetworkClient(networkClient);
             audioManager.OnAudioBlobReady += HandleAudioBlobReady;
+            audioManager.OnCaptureStateChanged += HandleAudioCaptureStateChanged;
         }
     }
 
     private void HandleTelemetryReceived(TelemetryData data)
     {
+        Debug.Log($"RobotManager: Received telemetry. Pos: ({data.posX}, {data.posY}), Status: {data.victimStatus}");
+        
         if (mapManager != null)
         {
             mapManager.UpdateRobotPosition(data.posX, data.posY);
@@ -188,5 +230,15 @@ public class RobotManager : MonoBehaviour
         }
 
         networkClient.SendAudioBlob(wavData);
+    }
+
+    private void HandleAudioCaptureStateChanged(AudioCaptureState state)
+    {
+        if (uiManager == null)
+        {
+            return;
+        }
+
+        uiManager.UpdatePTTState(state);
     }
 }
