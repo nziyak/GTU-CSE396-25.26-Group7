@@ -1,19 +1,19 @@
 /**
  * @file    environment_sensors.c
- * @brief   DHT22 Temperature/Humidity and MQ-2 Smoke/Gas Sensor Implementation
+ * @brief   DHT11 Temperature/Humidity and MQ-2 Smoke/Gas Sensor Implementation
  * @author  Gabil Rahimli 230104004902
  * @date    2026-05-16
  * @version 0.2
  *
  * Changelog:
  *   v0.1 - Header draft only.
- *   v0.2 - Full implementation: DHT22 single-wire protocol, MQ-2 ADC reading,
+ *   v0.2 - Full implementation: DHT11 single-wire protocol, MQ-2 ADC reading,
  *          combined read, and threshold-based smoke alert logic.
  *
  * Hardware Notes:
- *   - DHT22 data pin: PB12 (configurable via DHT22_GPIO_PORT / DHT22_GPIO_PIN)
- *   - MQ-2 analog out: PA7 / ADC1_IN7 (configurable via MQ2_ADC_CHANNEL)
- *   - DHT22 requires a 10k pull-up on the data line.
+ *   - DHT11 data pin: PB11 (configurable via DHT11_GPIO_PORT / DHT11_GPIO_PIN)
+ *   - MQ-2 analog out: PA4 / ADC1_IN4 (configurable via MQ2_ADC_CHANNEL)
+ *   - DHT11 requires a 10k pull-up on the data line.
  *   - MQ-2 requires ~20s preheat after power-on for stable readings.
  */
 
@@ -23,11 +23,11 @@
 
 /* ===== Configuration — adjust to match your wiring ====================== */
 
-#define DHT22_GPIO_PORT           GPIOB
-#define DHT22_GPIO_PIN            GPIO_PIN_12
+#define DHT11_GPIO_PORT           GPIOB
+#define DHT11_GPIO_PIN            GPIO_PIN_11
 
 #define MQ2_ADC_HANDLE            hadc1        /* extern declared below */
-#define MQ2_ADC_CHANNEL           ADC_CHANNEL_7
+#define MQ2_ADC_CHANNEL           ADC_CHANNEL_4
 #define MQ2_ADC_TIMEOUT_MS        50
 
 /* Default smoke threshold (raw 12-bit ADC value).
@@ -35,11 +35,11 @@
  * Tune empirically for the competition arena. */
 #define MQ2_DEFAULT_THRESHOLD     800
 
-/* DHT22 timing tolerances (microseconds) */
-#define DHT22_START_LOW_US        1200
-#define DHT22_START_HIGH_US       30
-#define DHT22_RESPONSE_TIMEOUT_US 100
-#define DHT22_BIT_THRESHOLD_US    40   /* >40us high = '1', <40us = '0' */
+/* DHT11 timing tolerances (microseconds) */
+#define DHT11_START_LOW_US        18000  /* DHT11 needs ≥18ms start low */
+#define DHT11_START_HIGH_US       30
+#define DHT11_RESPONSE_TIMEOUT_US 100
+#define DHT11_BIT_THRESHOLD_US    40   /* >40us high = '1', <40us = '0' */
 
 /* ===== External HAL Handles ============================================= */
 
@@ -76,50 +76,50 @@ static void dwt_init(void)
 }
 
 /**
- * @brief  Set DHT22 data pin as output (push-pull).
+ * @brief  Set DHT11 data pin as output (push-pull).
  */
-static void dht22_pin_output(void)
+static void dht11_pin_output(void)
 {
     GPIO_InitTypeDef gpio = {0};
-    gpio.Pin   = DHT22_GPIO_PIN;
+    gpio.Pin   = DHT11_GPIO_PIN;
     gpio.Mode  = GPIO_MODE_OUTPUT_PP;
     gpio.Pull  = GPIO_NOPULL;
     gpio.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(DHT22_GPIO_PORT, &gpio);
+    HAL_GPIO_Init(DHT11_GPIO_PORT, &gpio);
 }
 
 /**
- * @brief  Set DHT22 data pin as input (floating, external pull-up expected).
+ * @brief  Set DHT11 data pin as input (floating, external pull-up expected).
  */
-static void dht22_pin_input(void)
+static void dht11_pin_input(void)
 {
     GPIO_InitTypeDef gpio = {0};
-    gpio.Pin   = DHT22_GPIO_PIN;
+    gpio.Pin   = DHT11_GPIO_PIN;
     gpio.Mode  = GPIO_MODE_INPUT;
     gpio.Pull  = GPIO_PULLUP;
     gpio.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(DHT22_GPIO_PORT, &gpio);
+    HAL_GPIO_Init(DHT11_GPIO_PORT, &gpio);
 }
 
 /**
- * @brief  Read the DHT22 data pin state.
+ * @brief  Read the DHT11 data pin state.
  */
-static GPIO_PinState dht22_read_pin(void)
+static GPIO_PinState dht11_read_pin(void)
 {
-    return HAL_GPIO_ReadPin(DHT22_GPIO_PORT, DHT22_GPIO_PIN);
+    return HAL_GPIO_ReadPin(DHT11_GPIO_PORT, DHT11_GPIO_PIN);
 }
 
 /**
  * @brief  Wait for pin to reach expected state with a timeout.
  * @return Elapsed microseconds, or UINT32_MAX on timeout.
  */
-static uint32_t dht22_wait_for_state(GPIO_PinState expected, uint32_t timeout_us)
+static uint32_t dht11_wait_for_state(GPIO_PinState expected, uint32_t timeout_us)
 {
     uint32_t start = DWT->CYCCNT;
     uint32_t ticks_per_us = HAL_RCC_GetHCLKFreq() / 1000000;
     uint32_t timeout_ticks = timeout_us * ticks_per_us;
 
-    while (dht22_read_pin() != expected) {
+    while (dht11_read_pin() != expected) {
         if ((DWT->CYCCNT - start) > timeout_ticks) {
             return UINT32_MAX; /* timeout */
         }
@@ -128,51 +128,52 @@ static uint32_t dht22_wait_for_state(GPIO_PinState expected, uint32_t timeout_us
 }
 
 /**
- * @brief  Read 40 bits from DHT22 (16-bit humidity + 16-bit temperature + 8-bit checksum).
+ * @brief  Read 40 bits from DHT11 (8-bit humidity int + 8-bit humidity dec +
+ *         8-bit temp int + 8-bit temp dec + 8-bit checksum).
  * @param  data  Output array of 5 bytes.
  * @return ENV_SENSOR_OK on success, negative error on failure.
  */
-static int dht22_read_raw(uint8_t data[5])
+static int dht11_read_raw(uint8_t data[5])
 {
     memset(data, 0, 5);
 
     /* ---- Host start signal ---- */
-    dht22_pin_output();
-    HAL_GPIO_WritePin(DHT22_GPIO_PORT, DHT22_GPIO_PIN, GPIO_PIN_RESET);
-    delay_us(DHT22_START_LOW_US);  /* Hold low for ≥1ms */
-    HAL_GPIO_WritePin(DHT22_GPIO_PORT, DHT22_GPIO_PIN, GPIO_PIN_SET);
-    delay_us(DHT22_START_HIGH_US); /* Release for ~30us */
-    dht22_pin_input();
+    dht11_pin_output();
+    HAL_GPIO_WritePin(DHT11_GPIO_PORT, DHT11_GPIO_PIN, GPIO_PIN_RESET);
+    delay_us(DHT11_START_LOW_US);  /* Hold low for ≥18ms (DHT11) */
+    HAL_GPIO_WritePin(DHT11_GPIO_PORT, DHT11_GPIO_PIN, GPIO_PIN_SET);
+    delay_us(DHT11_START_HIGH_US); /* Release for ~30us */
+    dht11_pin_input();
 
-    /* ---- DHT22 response signal ---- */
-    /* Wait for DHT22 to pull low (~80us) */
-    if (dht22_wait_for_state(GPIO_PIN_RESET, DHT22_RESPONSE_TIMEOUT_US) == UINT32_MAX) {
+    /* ---- DHT11 response signal ---- */
+    /* Wait for DHT11 to pull low (~80us) */
+    if (dht11_wait_for_state(GPIO_PIN_RESET, DHT11_RESPONSE_TIMEOUT_US) == UINT32_MAX) {
         return ENV_SENSOR_ERR_READ;
     }
-    /* Wait for DHT22 to pull high (~80us) */
-    if (dht22_wait_for_state(GPIO_PIN_SET, DHT22_RESPONSE_TIMEOUT_US) == UINT32_MAX) {
+    /* Wait for DHT11 to pull high (~80us) */
+    if (dht11_wait_for_state(GPIO_PIN_SET, DHT11_RESPONSE_TIMEOUT_US) == UINT32_MAX) {
         return ENV_SENSOR_ERR_READ;
     }
-    /* Wait for DHT22 to pull low again (start of first data bit) */
-    if (dht22_wait_for_state(GPIO_PIN_RESET, DHT22_RESPONSE_TIMEOUT_US) == UINT32_MAX) {
+    /* Wait for DHT11 to pull low again (start of first data bit) */
+    if (dht11_wait_for_state(GPIO_PIN_RESET, DHT11_RESPONSE_TIMEOUT_US) == UINT32_MAX) {
         return ENV_SENSOR_ERR_READ;
     }
 
     /* ---- Read 40 data bits ---- */
     for (int i = 0; i < 40; i++) {
         /* Wait for rising edge (each bit starts with ~50us low) */
-        if (dht22_wait_for_state(GPIO_PIN_SET, DHT22_RESPONSE_TIMEOUT_US) == UINT32_MAX) {
+        if (dht11_wait_for_state(GPIO_PIN_SET, DHT11_RESPONSE_TIMEOUT_US) == UINT32_MAX) {
             return ENV_SENSOR_ERR_READ;
         }
 
         /* Measure high-time duration to determine bit value */
-        uint32_t high_us = dht22_wait_for_state(GPIO_PIN_RESET, DHT22_RESPONSE_TIMEOUT_US);
+        uint32_t high_us = dht11_wait_for_state(GPIO_PIN_RESET, DHT11_RESPONSE_TIMEOUT_US);
         if (high_us == UINT32_MAX) {
             return ENV_SENSOR_ERR_READ;
         }
 
         /* >40us high = bit 1, <40us high = bit 0 */
-        if (high_us > DHT22_BIT_THRESHOLD_US) {
+        if (high_us > DHT11_BIT_THRESHOLD_US) {
             data[i / 8] |= (1 << (7 - (i % 8)));
         }
     }
@@ -225,19 +226,19 @@ int env_sensors_init(void)
 }
 
 /**
- * @brief  Read DHT22 temperature and humidity.
+ * @brief  Read DHT11 temperature and humidity.
  *
- * DHT22 specification:
- *   - Humidity range:    0 – 99.9 %RH
- *   - Temperature range: -40 – +80 °C
- *   - Resolution:        0.1 °C / 0.1 %RH
+ * DHT11 specification:
+ *   - Humidity range:    20 – 90 %RH
+ *   - Temperature range: 0 – 50 °C
+ *   - Resolution:        1 °C / 1 %RH (decimals are always 0)
  *   - Minimum read interval: 2 seconds
  *
  * @param  temperature_c_out  Pointer to temperature output in °C.
  * @param  humidity_pct_out   Pointer to humidity output in %.
  * @return ENV_SENSOR_OK on success, negative error code otherwise.
  */
-int env_read_dht22(float *temperature_c_out, float *humidity_pct_out)
+int env_read_dht11(float *temperature_c_out, float *humidity_pct_out)
 {
     if (!g_initialized) {
         return ENV_SENSOR_ERR_INIT;
@@ -247,24 +248,16 @@ int env_read_dht22(float *temperature_c_out, float *humidity_pct_out)
     }
 
     uint8_t raw[5];
-    int result = dht22_read_raw(raw);
+    int result = dht11_read_raw(raw);
     if (result != ENV_SENSOR_OK) {
         return result;
     }
 
-    /* Parse humidity (raw[0]:raw[1]) — unsigned, 0.1 %RH resolution */
-    uint16_t hum_raw = ((uint16_t)raw[0] << 8) | raw[1];
-    *humidity_pct_out = hum_raw / 10.0f;
+    /* Parse humidity (raw[0] is int, raw[1] is dec) — DHT11 only uses int */
+    *humidity_pct_out = (float)raw[0];
 
-    /* Parse temperature (raw[2]:raw[3]) — MSB is sign bit, 0.1 °C resolution */
-    uint16_t temp_raw = ((uint16_t)raw[2] << 8) | raw[3];
-    if (temp_raw & 0x8000) {
-        /* Negative temperature */
-        temp_raw &= 0x7FFF;
-        *temperature_c_out = -(temp_raw / 10.0f);
-    } else {
-        *temperature_c_out = temp_raw / 10.0f;
-    }
+    /* Parse temperature (raw[2] is int, raw[3] is dec) — DHT11 only uses int */
+    *temperature_c_out = (float)raw[2];
 
     /* Sanity check */
     if (*temperature_c_out < ENV_SENSOR_MIN_TEMP_C ||
@@ -336,10 +329,13 @@ int env_read_all(environment_data_t *out_data)
 
     int result;
 
-    /* Read DHT22 */
-    result = env_read_dht22(&out_data->temperature_c, &out_data->humidity_pct);
-    if (result != ENV_SENSOR_OK) {
-        /* On DHT22 failure, zero out fields but continue with MQ-2 */
+    /* 1. Read DHT11 */
+    float temp, hum;
+    if (env_read_dht11(&temp, &hum) == ENV_SENSOR_OK) {
+        out_data->temperature_c = temp;
+        out_data->humidity_pct  = hum;
+    } else {
+        /* On DHT11 failure, zero out fields but continue with MQ-2 */
         out_data->temperature_c = 0.0f;
         out_data->humidity_pct  = 0.0f;
     }

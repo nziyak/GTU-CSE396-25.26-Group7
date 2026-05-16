@@ -22,9 +22,9 @@
  *       LT = lights on/off
  *
  * Hardware:
- *   - USART2 @ 115200 baud, 8N1
- *   - TX = PA2 (USART2_TX)
- *   - RX = PA3 (USART2_RX)
+ *   - USART1 @ 115200 baud, 8N1
+ *   - TX = PA9  (USART1_TX)
+ *   - RX = PA10 (USART1_RX)
  *   - DMA is used for TX to avoid blocking.
  *   - RX uses byte-by-byte interrupt into a ring buffer.
  */
@@ -37,7 +37,7 @@
 
 /* ===== External HAL Handle ============================================== */
 
-extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart1;
 
 /* ===== Ring Buffer for RX =============================================== */
 
@@ -175,10 +175,10 @@ static bool parse_command_line(const char *line, uart_command_t *out_cmd)
  */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if (huart->Instance == USART2) {
+    if (huart->Instance == USART1) {
         ring_push(rx_byte);
         /* Re-arm single-byte interrupt reception */
-        HAL_UART_Receive_IT(&huart2, &rx_byte, 1);
+        HAL_UART_Receive_IT(&huart1, &rx_byte, 1);
     }
 }
 
@@ -201,12 +201,12 @@ int8_t uart_comm_init(void)
     memset(cmd_line, 0, sizeof(cmd_line));
 
     /* Verify UART handle */
-    if (huart2.Instance == NULL) {
+    if (huart1.Instance == NULL) {
         return -1;
     }
 
     /* Start byte-by-byte interrupt reception */
-    if (HAL_UART_Receive_IT(&huart2, &rx_byte, 1) != HAL_OK) {
+    if (HAL_UART_Receive_IT(&huart1, &rx_byte, 1) != HAL_OK) {
         return -1;
     }
 
@@ -255,7 +255,7 @@ void uart_send_telemetry(const uart_telemetry_t *data)
     if (len > 0 && len < (int)sizeof(tx_buffer)) {
         /* Blocking transmit with 100ms timeout.
          * For higher throughput, switch to HAL_UART_Transmit_DMA. */
-        HAL_UART_Transmit(&huart2, (uint8_t *)tx_buffer, (uint16_t)len, 100);
+        HAL_UART_Transmit(&huart1, (uint8_t *)tx_buffer, (uint16_t)len, 100);
     }
 }
 
