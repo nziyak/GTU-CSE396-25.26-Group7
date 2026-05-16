@@ -16,7 +16,7 @@ using UnityEngine;
 public class RobotManager : MonoBehaviour
 {
     [Header("Connection")]
-    [SerializeField] private string serverUrl = "ws://192.168.1.10:5000";
+    [SerializeField] private string serverUrl = "ws://localhost:5001";
     [SerializeField] private bool connectOnStart = true;
 
     [Header("Managers")]
