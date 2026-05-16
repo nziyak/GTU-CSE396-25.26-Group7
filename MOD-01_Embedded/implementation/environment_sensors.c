@@ -18,7 +18,7 @@
  */
 
 #include "environment_sensors.h"
-#include "stm32f1xx_hal.h"
+#include "stm32f4xx_hal.h"
 #include <string.h>
 
 /* ===== Configuration — adjust to match your wiring ====================== */

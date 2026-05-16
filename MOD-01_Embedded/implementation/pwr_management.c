@@ -21,7 +21,7 @@
  */
 
 #include "pwr_management.h"
-#include "stm32f1xx_hal.h"
+#include "stm32f4xx_hal.h"
 
 /* ===== Pin Configuration ================================================ */
 /* Remap the abstract header defines to concrete port/pin pairs.

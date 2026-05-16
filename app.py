@@ -1,122 +1,113 @@
-import sys
 import os
+import sys
 import threading
 import time
 
-# MOD-03 ve MOD-04 klasörlerini Python yoluna ekliyoruz ki import yapabilelim
-sys.path.append(os.path.join(os.path.dirname(__file__), 'MOD-03_Acoustics'))
-sys.path.append(os.path.join(os.path.dirname(__file__), 'MOD-04_Web_STT'))
+REPO_ROOT = os.path.dirname(__file__)
+sys.path.append(os.path.join(REPO_ROOT, "MOD-02_Vision"))
+sys.path.append(os.path.join(REPO_ROOT, "MOD-03_Acoustics"))
+sys.path.append(os.path.join(REPO_ROOT, "MOD-04_Web_STT"))
 
+from ai_vision import VisionPipeline
 from acoustic_homing import AcousticHomingBridge, MotorDirection
 from comms_dashboard import WebDashboard
-from comms_dashboard_interface import AugmentedStatusReport
-from stt_engine import STTEngine
 
-BASE_DIR = os.path.dirname(__file__)
 
 def fsm_transition_callback(bearing: float):
-    """MOD-03'ten gelen FSM durum değiştirme isteğini yakalar."""
-    print(f"\n[FSM] *** DURUM DEĞİŞİKLİĞİ: EXPLORE -> ACOUSTIC_HOMING (Açı: {bearing:.1f}°) ***\n")
+    """Capture the MOD-03 request to transition into acoustic homing."""
+    print(f"\n[FSM] EXPLORE -> ACOUSTIC_HOMING requested (bearing={bearing:.1f} deg)\n")
 
-def pause_vision_for_stt():
-    """STT çalışırken MOD-02 vision pipeline'ını durdurmak için entegrasyon kancası."""
-    print("[MOD-02] STT için vision pipeline pause isteği gönderildi.")
 
-def resume_vision_after_stt():
-    """STT tamamlandıktan sonra MOD-02 vision pipeline'ını devam ettirmek için entegrasyon kancası."""
-    print("[MOD-02] STT sonrası vision pipeline resume isteği gönderildi.")
-
-def initialize_stt_engine():
-    """Vosk STT motorunu yükler; yükleme başarısızsa dashboard STT'siz çalışır."""
-    stt_model_path = os.path.join(BASE_DIR, "MOD-04_Web_STT", "vosk-model")
-    stt_engine = STTEngine()
-
-    if stt_engine.load_offline_model(stt_model_path):
-        return stt_engine
-
-    print("[STT] Model yüklenemedi. Audio eventleri reddedilecek.")
-    return None
-
-def simulate_robot_loop(dashboard: WebDashboard, acoustic_bridge: AcousticHomingBridge):
+def simulate_robot_loop(
+    dashboard: WebDashboard,
+    acoustic_bridge: AcousticHomingBridge,
+    vision: VisionPipeline,
+):
     """
-    Sanal bir donanım (UART) simülasyonu.
-    Robotun sağından (+45 derece) sürekli ses geldiğini varsayar.
-    Robot sağa döndükçe bu açıyı 0'a doğru azaltırız.
+    End-to-end integration loop for MOD-02 + MOD-03 + MOD-04 + MOD-05.
+
+    Telemetry source:
+    - MOD-02 provides victim_status and priority_level
+    - MOD-03 provides acoustic_hit and acoustic_angle
+    - MOD-04 serializes and broadcasts the merged payload
+    - MOD-05 consumes the resulting telemetry JSON
     """
-    
-    current_bearing = 45.0 # Başlangıçta ses sağdan 45 derece açıyla geliyor
+
+    current_bearing = 45.0
     is_sound_active = True
-    
+
     while True:
-        # 1. Sahte UART String'i oluştur (STM32'den geliyormuş gibi)
         a_hit = 1 if is_sound_active else 0
         uart_line = f"|Temp:25.3|Smoke:0|A_Hit:{a_hit}|A_Ang:{current_bearing:.1f}|\n"
-        
-        # 2. MOD-03 Akustik Köprüsü üzerinden UART verisini işle
-        # Bu fonksiyon üst üste 3 hit alana kadar None döner.
         nav_command = acoustic_bridge.process_uart_line(uart_line)
-        
-        # 3. Eğer akustik köprü robota hareket komutu verirse:
+
         if nav_command:
-            print(f"[MOTOR] MOD-03'ten komut geldi: Yön={nav_command.direction.name}, Hız={nav_command.speed}")
-            
-            # Robotun sese doğru döndüğünü simüle edelim:
+            print(f"[MOTOR] MOD-03 command: dir={nav_command.direction.name}, speed={nav_command.speed}")
+
             if nav_command.direction == MotorDirection.RIGHT:
-                current_bearing -= 15.0  # Robot sağa döndükçe sesin açısı küçülür
-                if current_bearing < 0: current_bearing = 0.0
+                current_bearing -= 15.0
+                if current_bearing < 0:
+                    current_bearing = 0.0
             elif nav_command.direction == MotorDirection.LEFT:
                 current_bearing += 15.0
-                if current_bearing > 0: current_bearing = 0.0
+                if current_bearing > 0:
+                    current_bearing = 0.0
             elif nav_command.direction == MotorDirection.FORWARD:
-                # Açı 0'a yaklaştığında ileri komutu gelir
-                print("[SİMÜLASYON] Robot ses kaynağına başarıyla hizalandı ve ilerliyor!")
-                is_sound_active = False # Hedefe ulaştık, sesi kes
-                acoustic_bridge.reset() # Köprüyü sıfırla
-                current_bearing = 45.0 # Bir sonraki test için tekrar sağa al
-                time.sleep(5) # 5 saniye bekle
+                print("[SIM] Robot aligned with sound source and moving forward.")
+                is_sound_active = False
+                acoustic_bridge.reset()
+                current_bearing = 45.0
+                time.sleep(5)
                 is_sound_active = True
-                print("\n[SİMÜLASYON] Yeni bir ses duyuldu!")
-                
-        # 4. Elde ettiğimiz durumu Unity'ye (MOD-05) gönder
-        report = AugmentedStatusReport(
-            pos_x=0.0,  # Sabit tutuyoruz
+                print("\n[SIM] New acoustic event detected.")
+
+        report = vision.build_augmented_status_report(
+            pos_x=0.0,
             pos_y=0.0,
             temperature=25.3,
             smoke_detected=False,
-            victim_status="NONE",
             is_stuck=False,
-            priority_level=0,
             acoustic_hit=is_sound_active,
-            acoustic_angle=current_bearing
+            acoustic_angle=current_bearing,
         )
         dashboard.broadcast_telemetry(report)
-        
-        time.sleep(1) # Her 1 saniyede bir döngü çalışır
+
+        latest_frame = vision.get_latest_frame_jpeg()
+        if latest_frame:
+            dashboard.stream_video_frame(latest_frame)
+
+        latest_target = vision.get_latest_target()
+        if latest_target is not None:
+            print(
+                "[VISION] "
+                f"severity={latest_target.severity} "
+                f"confidence={latest_target.confidence:.2f} "
+                f"distance_cm={latest_target.distance_cm:.1f}"
+            )
+
+        time.sleep(1)
+
 
 if __name__ == "__main__":
-    print("=== ANA SİSTEM BAŞLATILIYOR (MOD-03 + MOD-04 + MOD-05) ===")
-    
-    # 1. STT ve Dashboard Başlat
-    stt_engine = initialize_stt_engine()
-    dashboard = WebDashboard(
-        stt_engine=stt_engine,
-        pause_vision_callback=pause_vision_for_stt,
-        resume_vision_callback=resume_vision_after_stt
-    )
-    
-    # 2. Akustik Köprüyü Başlat (Callback bağlayarak)
+    print("=== MAIN SYSTEM STARTING (MOD-02 + MOD-03 + MOD-04 + MOD-05) ===")
+
+    dashboard = WebDashboard()
     acoustic_bridge = AcousticHomingBridge(fsm_transition_callback=fsm_transition_callback)
-    
-    # 3. Simülasyon Thread'ini Başlat
+    vision = VisionPipeline()
+
+    if not vision.initialize_camera():
+        raise RuntimeError("MOD-02 Vision could not be initialized.")
+
     sim_thread = threading.Thread(
-        target=simulate_robot_loop, 
-        args=(dashboard, acoustic_bridge), 
-        daemon=True
+        target=simulate_robot_loop,
+        args=(dashboard, acoustic_bridge, vision),
+        daemon=True,
     )
     sim_thread.start()
-    
-    # 4. Sunucuyu Ana Thread'de Bloklayarak Çalıştır
+
     try:
         dashboard.start_server(port=5001)
     except KeyboardInterrupt:
-        print("\nSistem kapatılıyor...")
+        print("\nSystem shutting down...")
+    finally:
+        vision.shutdown()

@@ -273,7 +273,7 @@ public class WebSocketClient : INetworkClient
             posY = payload.HasUnderscoreCoordinates ? payload.pos_y : payload.posY,
             temperature = payload.HasShortTemperature ? payload.temp : payload.temperature,
             smokeDetected = payload.HasShortSmoke ? payload.smoke : payload.smokeDetected || payload.smoke_detected,
-            priorityLevel = payload.ResolvePriorityLevel(),
+            priorityLevel = payload.HasShortPriority ? payload.priority : payload.priorityLevel,
             isStuck = payload.isStuck || payload.is_stuck
         };
 
@@ -404,7 +404,6 @@ public class WebSocketClient : INetworkClient
         public bool smoke;
         public string victim_status;
         public int priority;
-        public int priority_level;
         public bool acoustic_hit;
         public float acoustic_angle;
         public bool smoke_detected;
@@ -413,20 +412,6 @@ public class WebSocketClient : INetworkClient
         public bool HasUnderscoreCoordinates => Mathf.Abs(pos_x) > Mathf.Epsilon || Mathf.Abs(pos_y) > Mathf.Epsilon;
         public bool HasShortTemperature => Mathf.Abs(temp) > Mathf.Epsilon;
         public bool HasShortSmoke => smoke || smoke_detected;
-
-        public int ResolvePriorityLevel()
-        {
-            if (priority_level != 0)
-            {
-                return priority_level;
-            }
-
-            if (priority != 0)
-            {
-                return priority;
-            }
-
-            return priorityLevel;
-        }
+        public bool HasShortPriority => priority != 0;
     }
 }
