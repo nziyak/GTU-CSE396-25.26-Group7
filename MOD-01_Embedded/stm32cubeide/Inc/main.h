@@ -78,19 +78,19 @@ void Error_Handler(void);
 #define LED_MOSFET_GPIO_Port     GPIOB
 
 /* ---- Power Management (v5.2) -------------------------------------------- */
-#define PWR_DECOY_EN_Pin         GPIO_PIN_5      /* PA5  — 12V MOSFET gate */
-#define PWR_DECOY_EN_GPIO_Port   GPIOA
-#define PWR_PI_STATUS_Pin        GPIO_PIN_6      /* PA6  — Pi 5V rail monitor */
-#define PWR_PI_STATUS_GPIO_Port  GPIOA
+#define PWR_DECOY_EN_Pin         GPIO_PIN_14     /* PC14 — 12V MOSFET gate */
+#define PWR_DECOY_EN_GPIO_Port   GPIOC
+#define PWR_PI_STATUS_Pin        GPIO_PIN_15     /* PC15 — Pi 5V rail monitor */
+#define PWR_PI_STATUS_GPIO_Port  GPIOC
 
 /* ---- HC-SR04 TRIG (v5.2) ------------------------------------------------ */
-#define HCSR04_TRIG0_Pin         GPIO_PIN_15     /* PA15 — Front  TRIG (JTAG remap) */
+#define HCSR04_TRIG0_Pin         GPIO_PIN_5      /* PA5  — Front  TRIG */
 #define HCSR04_TRIG0_GPIO_Port   GPIOA
-#define HCSR04_TRIG1_Pin         GPIO_PIN_3      /* PB3  — Back   TRIG (JTAG remap) */
-#define HCSR04_TRIG1_GPIO_Port   GPIOB
-#define HCSR04_TRIG2_Pin         GPIO_PIN_7      /* PA7  — Left   TRIG */
+#define HCSR04_TRIG1_Pin         GPIO_PIN_6      /* PA6  — Back   TRIG */
+#define HCSR04_TRIG1_GPIO_Port   GPIOA
+#define HCSR04_TRIG2_Pin         GPIO_PIN_8      /* PA8  — Left   TRIG */
 #define HCSR04_TRIG2_GPIO_Port   GPIOA
-#define HCSR04_TRIG3_Pin         GPIO_PIN_8      /* PA8  — Right  TRIG */
+#define HCSR04_TRIG3_Pin         GPIO_PIN_7      /* PA7  — Right  TRIG */
 #define HCSR04_TRIG3_GPIO_Port   GPIOA
 
 /* ---- HC-SR04 ECHO (v5.2) — FT pins, 5V tolerant ------------------------ */
@@ -98,9 +98,9 @@ void Error_Handler(void);
 #define HCSR04_ECHO0_GPIO_Port   GPIOB
 #define HCSR04_ECHO1_Pin         GPIO_PIN_13     /* PB13 — Back   ECHO */
 #define HCSR04_ECHO1_GPIO_Port   GPIOB
-#define HCSR04_ECHO2_Pin         GPIO_PIN_14     /* PB14 — Left   ECHO */
+#define HCSR04_ECHO2_Pin         GPIO_PIN_15     /* PB15 — Left   ECHO */
 #define HCSR04_ECHO2_GPIO_Port   GPIOB
-#define HCSR04_ECHO3_Pin         GPIO_PIN_15     /* PB15 — Right  ECHO */
+#define HCSR04_ECHO3_Pin         GPIO_PIN_14     /* PB14 — Right  ECHO */
 #define HCSR04_ECHO3_GPIO_Port   GPIOB
 
 /* ---- IMU (v5.2) --------------------------------------------------------- */

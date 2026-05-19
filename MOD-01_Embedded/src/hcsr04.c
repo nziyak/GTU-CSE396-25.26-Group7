@@ -8,10 +8,10 @@
  * Uses DWT cycle counter for microsecond timing (no extra timer needed).
  *
  * Pin mapping (v5.2):
- *   TRIG0 (Front) = PA15   ECHO0 = PB12
- *   TRIG1 (Back)  = PB3    ECHO1 = PB13
- *   TRIG2 (Left)  = PA7    ECHO2 = PB14
- *   TRIG3 (Right) = PA8    ECHO3 = PB15
+ *   TRIG0 (Front) = PA5    ECHO0 = PB12
+ *   TRIG1 (Back)  = PA6    ECHO1 = PB13
+ *   TRIG2 (Left)  = PA8    ECHO2 = PB15
+ *   TRIG3 (Right) = PA7    ECHO3 = PB14
  */
 
 #include "hcsr04.h"
@@ -27,10 +27,10 @@ typedef struct {
 } hcsr04_pin_t;
 
 static const hcsr04_pin_t s_sensors[HCSR04_COUNT] = {
-    /* #0 Front  */ { GPIOA, GPIO_PIN_15, GPIOB, GPIO_PIN_12 },
-    /* #1 Back   */ { GPIOB, GPIO_PIN_3,  GPIOB, GPIO_PIN_13 },
-    /* #2 Left   */ { GPIOA, GPIO_PIN_7,  GPIOB, GPIO_PIN_14 },
-    /* #3 Right  */ { GPIOA, GPIO_PIN_8,  GPIOB, GPIO_PIN_15 },
+    /* #0 Front  */ { GPIOA, GPIO_PIN_5,  GPIOB, GPIO_PIN_12 },
+    /* #1 Back   */ { GPIOA, GPIO_PIN_6,  GPIOB, GPIO_PIN_13 },
+    /* #2 Left   */ { GPIOA, GPIO_PIN_8,  GPIOB, GPIO_PIN_15 },
+    /* #3 Right  */ { GPIOA, GPIO_PIN_7,  GPIOB, GPIO_PIN_14 },
 };
 
 static bool s_initialized = false;

@@ -435,30 +435,26 @@ static void MX_GPIO_Init(void)
     GPIO_InitTypeDef g = {0};
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
 
     /* Initial output levels: LOW */
     HAL_GPIO_WritePin(GPIOA,
-        MOTOR_A_IN1_Pin|MOTOR_A_IN2_Pin|PWR_DECOY_EN_Pin|
-        HCSR04_TRIG0_Pin|HCSR04_TRIG2_Pin|HCSR04_TRIG3_Pin, GPIO_PIN_RESET);
+        MOTOR_A_IN1_Pin|MOTOR_A_IN2_Pin|
+        HCSR04_TRIG0_Pin|HCSR04_TRIG1_Pin|HCSR04_TRIG2_Pin|HCSR04_TRIG3_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(GPIOB,
-        MOTOR_B_IN3_Pin|MOTOR_B_IN4_Pin|LED_MOSFET_Pin|HCSR04_TRIG1_Pin, GPIO_PIN_RESET);
+        MOTOR_B_IN3_Pin|MOTOR_B_IN4_Pin|LED_MOSFET_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOC, PWR_DECOY_EN_Pin, GPIO_PIN_RESET);
 
     /* GPIOA Outputs */
-    g.Pin   = MOTOR_A_IN1_Pin|MOTOR_A_IN2_Pin|PWR_DECOY_EN_Pin|
-              HCSR04_TRIG0_Pin|HCSR04_TRIG2_Pin|HCSR04_TRIG3_Pin;
+    g.Pin   = MOTOR_A_IN1_Pin|MOTOR_A_IN2_Pin|
+              HCSR04_TRIG0_Pin|HCSR04_TRIG1_Pin|HCSR04_TRIG2_Pin|HCSR04_TRIG3_Pin;
     g.Mode  = GPIO_MODE_OUTPUT_PP;
     g.Pull  = GPIO_NOPULL;
     g.Speed = GPIO_SPEED_FREQ_LOW;
     HAL_GPIO_Init(GPIOA, &g);
 
-    /* GPIOA Input: PWR_PI_STATUS */
-    g.Pin  = PWR_PI_STATUS_Pin;
-    g.Mode = GPIO_MODE_INPUT;
-    g.Pull = GPIO_PULLDOWN;
-    HAL_GPIO_Init(GPIOA, &g);
-
     /* GPIOB Outputs */
-    g.Pin   = MOTOR_B_IN3_Pin|MOTOR_B_IN4_Pin|LED_MOSFET_Pin|HCSR04_TRIG1_Pin;
+    g.Pin   = MOTOR_B_IN3_Pin|MOTOR_B_IN4_Pin|LED_MOSFET_Pin;
     g.Mode  = GPIO_MODE_OUTPUT_PP;
     g.Pull  = GPIO_NOPULL;
     g.Speed = GPIO_SPEED_FREQ_LOW;
@@ -470,6 +466,19 @@ static void MX_GPIO_Init(void)
     g.Mode = GPIO_MODE_INPUT;
     g.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOB, &g);
+
+    /* GPIOC Output: PWR_DECOY_EN */
+    g.Pin   = PWR_DECOY_EN_Pin;
+    g.Mode  = GPIO_MODE_OUTPUT_PP;
+    g.Pull  = GPIO_NOPULL;
+    g.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(GPIOC, &g);
+
+    /* GPIOC Input: PWR_PI_STATUS */
+    g.Pin  = PWR_PI_STATUS_Pin;
+    g.Mode = GPIO_MODE_INPUT;
+    g.Pull = GPIO_PULLDOWN;
+    HAL_GPIO_Init(GPIOC, &g);
 
     /* DHT11 data pin — pull-up input (reconfigured during comms) */
     g.Pin  = DHT11_DATA_Pin;

@@ -11,10 +11,10 @@
  * Hardware (v5.2):
  *   Sensor | Position | TRIG Pin | ECHO Pin | Notes
  *   -------|----------|----------|----------|---------------------------
- *     #0   |  Front   |  PA15    |  PB12    | JTAG remap required
- *     #1   |  Back    |  PB3     |  PB13    | JTAG remap required
- *     #2   |  Left    |  PA7     |  PB14    | Standard GPIO
- *     #3   |  Right   |  PA8     |  PB15    | Standard GPIO
+ *     #0   |  Front   |  PA5     |  PB12    | Standard GPIO
+ *     #1   |  Back    |  PA6     |  PB13    | Standard GPIO
+ *     #2   |  Left    |  PA8     |  PB15    | Standard GPIO
+ *     #3   |  Right   |  PA7     |  PB14    | Standard GPIO
  *
  * ECHO pins PB12-PB15 are 5V-tolerant (FT) — direct HC-SR04 connection OK.
  * A 1kΩ series resistor is recommended for additional protection.

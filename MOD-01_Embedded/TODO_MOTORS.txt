@@ -1,0 +1,16 @@
+TODO: MOTOR HIZ KONTROLÜ (PWM) İÇİN DONANIM DEĞİŞİKLİĞİ
+
+Durum Tespiti:
+STM32F103C6 mikrodenetleyicisinde donanımsal olarak TIM4 (Timer 4) birimi bulunmamaktadır. 
+Şu anki şemada ENA ve ENB pinleri PB8 ve PB9 pinlerine bağlıdır. Bu pinler sadece TIM4 üzerinden donanımsal PWM üretebilir.
+
+Yapılması Gerekenler:
+1. Donanımsal hız kontrolü (PWM) isteniyorsa, PB8 ve PB9 pinlerindeki L298N ENA/ENB bağlantıları lehimle sökülerek; TIM1, TIM2 veya TIM3 üzerinden donanımsal PWM destekleyen pinlere taşınmalıdır.
+2. Önerilen alternatif PWM pinleri:
+   - TIM2 pinleri: PA0, PA1, PA2, PA3 (Şu an ADC MAX4466 mikrofonlara bağlı)
+   - TIM3 pinleri: PA6, PA7 (Şu an HC-SR04 TRIG pinlerine bağlı)
+   (Bu pinlerden bazıları sensörlerden boşa çıkartılıp, sensörler PB8/PB9 gibi sadece dijital I/O olan pinlere kaydırılmalıdır.)
+3. Eğer karta dokunmak/lehim değiştirmek istenmiyorsa, projedeki `motor_control.c` kütüphanesi baştan yazılarak PB8/PB9 pinleri için bir donanımsal timer (örn. TIM2) kesmesi üzerinden "Yazılımsal PWM (Software PWM)" implemente edilmelidir. Ancak bu yöntem işlemciyi yorar.
+
+Sonuç: 
+Bir sonraki geliştirme seansımızda bu iki karardan (Lehim Değişimi veya Software PWM) biri seçilip, motor mimarisi ona göre kodlanacaktır.
