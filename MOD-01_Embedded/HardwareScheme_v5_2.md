@@ -16,6 +16,7 @@
 | 1 | HC-SR04 Sol ve Sağ pinleri (TRIG/ECHO) donanımdaki lehimlemeye göre terslendi. | Yanlış lehimleme (Left: PA8/PB15, Right: PA7/PB14) kalıcı düzeltme olarak şemaya işlendi. |
 | 2 | HC-SR04 Ön ve Arka TRIG pinleri (PA5/PA6) olarak güncellendi. | Boş pinlerin doğru kullanımı. |
 | 3 | Power Management (PWR_DECOY_EN ve PWR_PI_STATUS) PC14 ve PC15'e taşındı. | PA5 ve PA6 HC-SR04 TRIG pinlerine ayrıldığı için güç yönetimi yedeklenen PC portuna aktarıldı. |
+| 4 | HC-SR04 Ön TRIG pini PA5'ten PB3'e taşındı. | Donanım lehimlemesindeki farklılığa uyum sağlamak için kalıcı düzeltme (JTAG remap gerektirir). |
 
 ---
 
@@ -51,7 +52,7 @@ JTAG (kullanılmıyor — SWD yeterli): PA15, PB3, PB4 GPIO olarak boşaltılabi
 | PA2   | MAX4466 #2 (mikrofon)    | Akustik       | ADC1_IN2      |
 | PA3   | MAX4466 #3 (mikrofon)    | Akustik       | ADC1_IN3      |
 | PA4   | MQ2 Analog Out           | Çevre Sensör  | ADC1_IN4      |
-| PA5   | HC-SR04 #0 TRIG (Ön)     | Mesafe        | GPIO Out      |
+| PA5   | BOŞ                      | —             | —             |
 | PA6   | HC-SR04 #1 TRIG (Arka)   | Mesafe        | GPIO Out      |
 | PA7   | HC-SR04 #3 TRIG (Sağ)    | Mesafe        | GPIO Out      |
 | PA8   | HC-SR04 #2 TRIG (Sol)    | Mesafe        | GPIO Out      |
@@ -64,7 +65,7 @@ JTAG (kullanılmıyor — SWD yeterli): PA15, PB3, PB4 GPIO olarak boşaltılabi
 | PA15  | BOŞ (JTAG remap gerekli) | —             | —             |
 | PB0   | L298N IN4                | Motor         | GPIO Out      |
 | PB1   | **LED MOSFET Sinyal**    | **Aydınlatma**| **GPIO Out**  |
-| PB3   | BOŞ (JTAG remap gerekli) | —             | —             |
+| PB3   | HC-SR04 #0 TRIG (Ön)     | Mesafe        | GPIO Out      |
 | PB4   | BOŞ (JTAG remap gerekli) | —             | —             |
 | PB5   | MPU6050 INT              | IMU           | GPIO In (EXTI)|
 | PB6   | I2C1 SCL (MPU6050)       | IMU           | AF Open-Drain |
@@ -119,7 +120,7 @@ JTAG (kullanılmıyor — SWD yeterli): PA15, PB3, PB4 GPIO olarak boşaltılabi
 
 | Sensör  | Konum  | TRIG Pin | ECHO Pin |
 |---------|--------|----------|----------|
-| SR04 #0 | Ön     | PA5      | PB12     |
+| SR04 #0 | Ön     | PB3      | PB12     |
 | SR04 #1 | Arka   | PA6      | PB13     |
 | SR04 #2 | Sol    | PA8      | PB15     |
 | SR04 #3 | Sağ    | PA7      | PB14     |
@@ -259,8 +260,8 @@ Güç yönetimi pinleri PA5/PA6 üzerinden çalışıyordu ancak HC-SR04 sensör
 
 | Pin   | Yetenek                       | Not                              |
 |-------|-------------------------------|----------------------------------|
+| PA5   | GPIO                          | Ön sensör TRIG pininden boşa çıktı|
 | PA15  | GPIO (JTAG remap gerekli)     | SWD aktif olduğu için AFIO remap gerekir |
-| PB3   | GPIO (JTAG remap gerekli)     | AFIO remap gerektirir            |
 | PB4   | GPIO (JTAG remap gerekli)     | AFIO remap gerektirir            |
 
 ---
