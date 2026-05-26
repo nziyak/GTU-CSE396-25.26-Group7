@@ -64,6 +64,24 @@ public class RobotManager : MonoBehaviour
 
 ---
 
+## Operator Command and Push-to-Talk UI Setup
+
+1. Add `OperatorControlUI.cs` to a Canvas-level GameObject, for example `OperatorControls`.
+2. Assign the scene `RobotManager` reference in the Inspector.
+3. Assign the movement buttons:
+   * `ForwardButton` -> sends `"FORWARD"`
+   * `BackwardButton` -> sends `"BACKWARD"`
+   * `LeftButton` -> sends `"LEFT"`
+   * `RightButton` -> sends `"RIGHT"`
+   * `StopButton` -> sends `"STOP"`
+4. Assign `PushToTalkButton`.
+   * Pointer down starts microphone recording through `RobotManager.StartPushToTalk()`.
+   * Pointer up or pointer exit stops recording, encodes WAV, and sends it through `audio_received`.
+
+If fields are left empty, `OperatorControlUI` also tries to auto-bind buttons by common names such as `ForwardButton`, `StopButton`, `PTTButton`, and `PushToTalkButton`.
+
+---
+
 ## API Summary
 
 ### `DataContracts.cs`
@@ -121,6 +139,14 @@ public class RobotManager : MonoBehaviour
 | `UpdateVictimStatus(VictimStatus status)` | `void` | Updates victim status label |
 | `UpdateHUD(TelemetryData data)` | `void` | Refreshes all HUD fields from one telemetry packet |
 | `UpdatePTTState(AudioCaptureState state)` | `void` | Displays Push-to-Talk status |
+
+### `OperatorControlUI.cs`
+
+| Member | Return | Description |
+|---|---|---|
+| `SendForward()` / `SendBackward()` / `SendLeft()` / `SendRight()` / `SendStop()` | `void` | Sends operator movement commands through `RobotManager` |
+| `OnPushToTalkPressed()` | `void` | Starts Push-to-Talk microphone recording |
+| `OnPushToTalkReleased()` | `void` | Stops Push-to-Talk recording, encodes WAV, and sends it |
 
 ---
 

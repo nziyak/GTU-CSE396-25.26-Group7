@@ -48,6 +48,10 @@ class WebDashboard(IWebDashboard):
             print(f"[WebDashboard] 'operator_command' event received: {data}")
             self.on_operator_command_received(data)
 
+        @self.socketio.on("unity_ping")
+        def handle_unity_ping(data):
+            self.socketio.emit("unity_pong", data, to=request.sid)
+
     def start_server(self, host: str = "0.0.0.0", port: int = 5000) -> None:
         print(f"[WebDashboard] Starting server on {host}:{port} ...")
         self.socketio.run(self.app, host=host, port=port, allow_unsafe_werkzeug=True)

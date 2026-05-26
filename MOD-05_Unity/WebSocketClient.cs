@@ -7,7 +7,7 @@
 ///
 /// Notes:
 /// - Connects to a Flask-SocketIO backend over Engine.IO v4 WebSocket transport.
-/// - Receives "telemetry_update" events and forwards them as TelemetryData.
+/// - Receives "telemetry_update" events and forwards raw JSON to RobotManager.
 /// - Sends operator commands and audio payloads through Socket.IO event packets.
 /// </summary>
 
@@ -21,8 +21,13 @@ using UnityEngine;
 public class WebSocketClient : INetworkClient
 {
     private const string TelemetryEventName = "telemetry_update";
+    private const string VideoFrameEventName = "video_frame";
+    private const string UnityPingEventName = "unity_ping";
+    private const string UnityPongEventName = "unity_pong";
     private const string OperatorCommandEventName = "operator_command";
     private const string AudioEventName = "audio_received";
+    private const int PingIntervalMs = 3000;
+    private const int MaxReconnectDelayMs = 16000;
 
     private readonly SynchronizationContext mainThreadContext;
     private readonly SemaphoreSlim sendSemaphore = new SemaphoreSlim(1, 1);
@@ -30,9 +35,19 @@ public class WebSocketClient : INetworkClient
     private ClientWebSocket socket;
     private CancellationTokenSource cancellationTokenSource;
     private Task receiveLoopTask;
+    private Task pingLoopTask;
     private volatile bool isConnected;
+    private volatile bool manualDisconnect;
+    private string lastEndpoint;
+    private int reconnectAttempt;
+    private long lastPingTicks;
+    private NetworkConnectionState connectionState = NetworkConnectionState.Disconnected;
 
-    public event Action<TelemetryData> OnTelemetryReceived;
+    public event Action<string> OnTelemetryJsonReceived;
+    public event Action<byte[]> OnVideoFrameReceived;
+    public event Action<NetworkConnectionState> OnConnectionStateChanged;
+    public event Action<float> OnLatencyUpdated;
+    public bool IsConnected => isConnected;
 
     public WebSocketClient()
     {
@@ -48,11 +63,14 @@ public class WebSocketClient : INetworkClient
     /// </summary>
     public async void Connect(string ipAddress)
     {
+        manualDisconnect = false;
+        lastEndpoint = ipAddress;
         await ConnectAsync(ipAddress);
     }
 
     public async void Disconnect()
     {
+        manualDisconnect = true;
         await DisconnectAsync();
     }
 
@@ -91,25 +109,29 @@ public class WebSocketClient : INetworkClient
 
     private async Task ConnectAsync(string address)
     {
-        await DisconnectAsync();
+        await DisconnectAsync(false);
 
         cancellationTokenSource = new CancellationTokenSource();
         socket = new ClientWebSocket();
+        SetConnectionState(NetworkConnectionState.Connecting);
 
         Uri socketUri = BuildSocketIoUri(address);
         try
         {
             await socket.ConnectAsync(socketUri, cancellationTokenSource.Token);
             receiveLoopTask = ReceiveLoopAsync(cancellationTokenSource.Token);
+            pingLoopTask = PingLoopAsync(cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
             Debug.LogError($"WebSocketClient connection failed: {ex.Message}");
             isConnected = false;
+            SetConnectionState(NetworkConnectionState.Disconnected);
+            ScheduleReconnect();
         }
     }
 
-    private async Task DisconnectAsync()
+    private async Task DisconnectAsync(bool publishDisconnected = true)
     {
         isConnected = false;
 
@@ -140,6 +162,11 @@ public class WebSocketClient : INetworkClient
                 socket = null;
             }
         }
+
+        if (publishDisconnected)
+        {
+            SetConnectionState(NetworkConnectionState.Disconnected);
+        }
     }
 
     private async Task ReceiveLoopAsync(CancellationToken cancellationToken)
@@ -155,6 +182,7 @@ public class WebSocketClient : INetworkClient
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
                     isConnected = false;
+                    SetConnectionState(NetworkConnectionState.Disconnected);
                     break;
                 }
 
@@ -181,7 +209,13 @@ public class WebSocketClient : INetworkClient
         catch (Exception ex)
         {
             isConnected = false;
+            SetConnectionState(NetworkConnectionState.Disconnected);
             Debug.LogError($"WebSocketClient receive loop failed: {ex.Message}");
+        }
+
+        if (!manualDisconnect)
+        {
+            ScheduleReconnect();
         }
     }
 
@@ -201,6 +235,8 @@ public class WebSocketClient : INetworkClient
         if (packet == "40" || packet.StartsWith("40{", StringComparison.Ordinal))
         {
             isConnected = true;
+            reconnectAttempt = 0;
+            SetConnectionState(NetworkConnectionState.Connected);
             Debug.Log("WebSocketClient Socket.IO namespace connected.");
             return;
         }
@@ -242,70 +278,105 @@ public class WebSocketClient : INetworkClient
         }
 
         string eventName = eventPayload.Substring(eventNameStart + 1, eventNameEnd - eventNameStart - 1);
-        if (!string.Equals(eventName, TelemetryEventName, StringComparison.Ordinal))
-        {
-            return;
-        }
-
         int separatorIndex = eventPayload.IndexOf(',', eventNameEnd + 1);
         if (separatorIndex < 0)
         {
             return;
         }
 
-        string telemetryJson = eventPayload.Substring(separatorIndex + 1).Trim();
-        if (telemetryJson.EndsWith("]", StringComparison.Ordinal))
+        string payloadJson = eventPayload.Substring(separatorIndex + 1).Trim();
+        if (payloadJson.EndsWith("]", StringComparison.Ordinal))
         {
-            telemetryJson = telemetryJson.Substring(0, telemetryJson.Length - 1);
+            payloadJson = payloadJson.Substring(0, payloadJson.Length - 1);
         }
 
-        TelemetryData telemetry = ParseTelemetryData(telemetryJson);
-        mainThreadContext.Post(_ => OnTelemetryReceived?.Invoke(telemetry), null);
+        if (string.Equals(eventName, TelemetryEventName, StringComparison.Ordinal))
+        {
+            mainThreadContext.Post(_ => OnTelemetryJsonReceived?.Invoke(payloadJson), null);
+            return;
+        }
+
+        if (string.Equals(eventName, VideoFrameEventName, StringComparison.Ordinal))
+        {
+            byte[] jpegBytes = DecodeVideoFramePayload(payloadJson);
+            if (jpegBytes != null && jpegBytes.Length > 0)
+            {
+                mainThreadContext.Post(_ => OnVideoFrameReceived?.Invoke(jpegBytes), null);
+            }
+            return;
+        }
+
+        if (string.Equals(eventName, UnityPongEventName, StringComparison.Ordinal))
+        {
+            PublishLatencySample();
+        }
     }
 
-    private TelemetryData ParseTelemetryData(string telemetryJson)
+    private async Task PingLoopAsync(CancellationToken cancellationToken)
     {
-        TelemetryWirePayload payload = JsonUtility.FromJson<TelemetryWirePayload>(telemetryJson);
-
-        TelemetryData data = new TelemetryData
+        while (!cancellationToken.IsCancellationRequested)
         {
-            posX = payload.HasUnderscoreCoordinates ? payload.pos_x : payload.posX,
-            posY = payload.HasUnderscoreCoordinates ? payload.pos_y : payload.posY,
-            temperature = payload.HasShortTemperature ? payload.temp : payload.temperature,
-            smokeDetected = payload.HasShortSmoke ? payload.smoke : payload.smokeDetected || payload.smoke_detected,
-            priorityLevel = payload.HasShortPriority ? payload.priority : payload.priorityLevel,
-            isStuck = payload.isStuck || payload.is_stuck
-        };
-
-        if (!string.IsNullOrEmpty(payload.victim_status))
-        {
-            data.victimStatus = ParseVictimStatus(payload.victim_status);
+            try
+            {
+                await Task.Delay(PingIntervalMs, cancellationToken);
+                if (isConnected && socket != null && socket.State == WebSocketState.Open)
+                {
+                    lastPingTicks = DateTime.UtcNow.Ticks;
+                    string payloadJson = "{\"clientTicks\":" + lastPingTicks + "}";
+                    await SendSocketIoEventAsync(UnityPingEventName, payloadJson);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
         }
-        else
-        {
-            data.victimStatus = payload.victimStatus;
-        }
-
-        if (payload.acousticHit || payload.acoustic_hit)
-        {
-            data.acousticHit = true;
-        }
-
-        data.acousticAngle = Mathf.Abs(payload.acoustic_angle) > Mathf.Epsilon
-            ? payload.acoustic_angle
-            : payload.acousticAngle;
-
-        return data;
     }
 
-    private static VictimStatus ParseVictimStatus(string rawStatus)
+    private async void ScheduleReconnect()
     {
-        if (Enum.TryParse(rawStatus, true, out VictimStatus parsedStatus))
+        if (manualDisconnect || string.IsNullOrEmpty(lastEndpoint))
         {
-            return parsedStatus;
+            return;
         }
 
-        return VictimStatus.NONE;
+        int delayMs = Mathf.Min(MaxReconnectDelayMs, 2000 * (1 << Mathf.Min(reconnectAttempt, 3)));
+        reconnectAttempt++;
+
+        try
+        {
+            await Task.Delay(delayMs);
+            if (!manualDisconnect)
+            {
+                await ConnectAsync(lastEndpoint);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"WebSocketClient reconnect failed: {ex.Message}");
+        }
+    }
+
+    private void PublishLatencySample()
+    {
+        if (lastPingTicks <= 0)
+        {
+            return;
+        }
+
+        float latencyMs = (float)TimeSpan.FromTicks(DateTime.UtcNow.Ticks - lastPingTicks).TotalMilliseconds;
+        mainThreadContext.Post(_ => OnLatencyUpdated?.Invoke(latencyMs), null);
+    }
+
+    private void SetConnectionState(NetworkConnectionState newState)
+    {
+        if (connectionState == newState)
+        {
+            return;
+        }
+
+        connectionState = newState;
+        mainThreadContext.Post(_ => OnConnectionStateChanged?.Invoke(newState), null);
     }
 
     private async Task SendSocketIoEventAsync(string eventName, string payloadJson)
@@ -385,33 +456,78 @@ public class WebSocketClient : INetworkClient
             .Replace("\"", "\\\"");
     }
 
-    [Serializable]
-    private struct TelemetryWirePayload
+    private static byte[] DecodeVideoFramePayload(string payloadJson)
     {
-        public float posX;
-        public float posY;
-        public float temperature;
-        public bool smokeDetected;
-        public VictimStatus victimStatus;
-        public int priorityLevel;
-        public bool acousticHit;
-        public float acousticAngle;
-        public bool isStuck;
+        string dataUrl = ExtractJsonString(payloadJson, "image");
+        if (string.IsNullOrEmpty(dataUrl))
+        {
+            return null;
+        }
 
-        public float pos_x;
-        public float pos_y;
-        public float temp;
-        public bool smoke;
-        public string victim_status;
-        public int priority;
-        public bool acoustic_hit;
-        public float acoustic_angle;
-        public bool smoke_detected;
-        public bool is_stuck;
+        const string base64Marker = "base64,";
+        int base64Start = dataUrl.IndexOf(base64Marker, StringComparison.OrdinalIgnoreCase);
+        string base64 = base64Start >= 0
+            ? dataUrl.Substring(base64Start + base64Marker.Length)
+            : dataUrl;
 
-        public bool HasUnderscoreCoordinates => Mathf.Abs(pos_x) > Mathf.Epsilon || Mathf.Abs(pos_y) > Mathf.Epsilon;
-        public bool HasShortTemperature => Mathf.Abs(temp) > Mathf.Epsilon;
-        public bool HasShortSmoke => smoke || smoke_detected;
-        public bool HasShortPriority => priority != 0;
+        try
+        {
+            return Convert.FromBase64String(base64);
+        }
+        catch (FormatException ex)
+        {
+            Debug.LogWarning($"WebSocketClient video_frame decode failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    private static string ExtractJsonString(string json, string key)
+    {
+        string quotedKey = "\"" + key + "\"";
+        int keyIndex = json.IndexOf(quotedKey, StringComparison.Ordinal);
+        if (keyIndex < 0)
+        {
+            return string.Empty;
+        }
+
+        int colonIndex = json.IndexOf(':', keyIndex + quotedKey.Length);
+        if (colonIndex < 0)
+        {
+            return string.Empty;
+        }
+
+        int valueStart = json.IndexOf('"', colonIndex + 1);
+        if (valueStart < 0)
+        {
+            return string.Empty;
+        }
+
+        StringBuilder valueBuilder = new StringBuilder();
+        bool escaped = false;
+        for (int i = valueStart + 1; i < json.Length; i++)
+        {
+            char c = json[i];
+            if (escaped)
+            {
+                valueBuilder.Append(c);
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\')
+            {
+                escaped = true;
+                continue;
+            }
+
+            if (c == '"')
+            {
+                return valueBuilder.ToString();
+            }
+
+            valueBuilder.Append(c);
+        }
+
+        return string.Empty;
     }
 }
