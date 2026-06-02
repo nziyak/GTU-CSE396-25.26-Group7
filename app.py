@@ -11,6 +11,7 @@ sys.path.append(os.path.join(REPO_ROOT, "MOD-04_Web_STT"))
 from ai_vision import VisionPipeline
 from acoustic_homing import AcousticHomingBridge, MotorDirection
 from comms_dashboard import WebDashboard
+from stm32_bridge import STM32Bridge
 
 
 def fsm_transition_callback(bearing: float):
@@ -97,6 +98,13 @@ if __name__ == "__main__":
 
     if not vision.initialize_camera():
         raise RuntimeError("MOD-02 Vision could not be initialized.")
+
+    # Initialize STM32 Bridge
+    stm32_bridge = STM32Bridge(port='/dev/ttyACM0', baudrate=115200, dashboard=dashboard)
+    if stm32_bridge.connect():
+        stm32_bridge.start()
+    else:
+        print("[WARNING] Could not connect to STM32, will run with simulation only.")
 
     sim_thread = threading.Thread(
         target=simulate_robot_loop,
