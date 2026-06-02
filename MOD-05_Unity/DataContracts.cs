@@ -75,6 +75,28 @@ public struct TelemetryData
 }
 
 [Serializable]
+public struct UartDebugData
+{
+    public int distFront;
+    public int distBack;
+    public int mic;
+    public float yaw;
+    public float pitch;
+    public float roll;
+    public float temp;
+    public float hum;
+    public bool connected;
+}
+
+[Serializable]
+public struct SpeechCommandParsedData
+{
+    public string rawText;
+    public string intent;
+    public float confidence;
+}
+
+[Serializable]
 public class AcousticBeamData
 {
     public float bearingDeg;

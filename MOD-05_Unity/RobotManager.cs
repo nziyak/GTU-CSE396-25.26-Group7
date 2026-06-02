@@ -38,6 +38,10 @@ public class RobotManager : MonoBehaviour
     /// <summary>Raised with compressed JPEG bytes received from MOD-04 video_frame events.</summary>
     public event Action<byte[]> OnVideoFrameReceived;
 
+    /// <summary>Raised with the latest optional STM32 diagnostic values.</summary>
+    public event Action<UartDebugData> OnUartDebugUpdated;
+    public event Action<SpeechCommandParsedData> OnSpeechCommandParsed;
+
     public event Action<NetworkConnectionState> OnConnectionStateChanged;
     public event Action<float> OnLatencyUpdated;
     public event Action<float> OnPttAmplitudeUpdated;
@@ -115,6 +119,8 @@ public class RobotManager : MonoBehaviour
         {
             networkClient.OnTelemetryJsonReceived -= HandleTelemetryJsonReceived;
             networkClient.OnVideoFrameReceived -= HandleVideoFrameReceived;
+            networkClient.OnUartDebugJsonReceived -= HandleUartDebugJsonReceived;
+            networkClient.OnSpeechCommandParsedJsonReceived -= HandleSpeechCommandParsedJsonReceived;
             networkClient.OnConnectionStateChanged -= HandleConnectionStateChanged;
             networkClient.OnLatencyUpdated -= HandleLatencyUpdated;
             networkClient.Disconnect();
@@ -214,6 +220,8 @@ public class RobotManager : MonoBehaviour
         {
             networkClient.OnTelemetryJsonReceived -= HandleTelemetryJsonReceived;
             networkClient.OnVideoFrameReceived -= HandleVideoFrameReceived;
+            networkClient.OnUartDebugJsonReceived -= HandleUartDebugJsonReceived;
+            networkClient.OnSpeechCommandParsedJsonReceived -= HandleSpeechCommandParsedJsonReceived;
             networkClient.OnConnectionStateChanged -= HandleConnectionStateChanged;
             networkClient.OnLatencyUpdated -= HandleLatencyUpdated;
             networkClient.Disconnect();
@@ -225,6 +233,8 @@ public class RobotManager : MonoBehaviour
 
         networkClient.OnTelemetryJsonReceived += HandleTelemetryJsonReceived;
         networkClient.OnVideoFrameReceived += HandleVideoFrameReceived;
+        networkClient.OnUartDebugJsonReceived += HandleUartDebugJsonReceived;
+        networkClient.OnSpeechCommandParsedJsonReceived += HandleSpeechCommandParsedJsonReceived;
         networkClient.OnConnectionStateChanged += HandleConnectionStateChanged;
         networkClient.OnLatencyUpdated += HandleLatencyUpdated;
 
@@ -240,6 +250,8 @@ public class RobotManager : MonoBehaviour
         OnTelemetryUpdated += UpdateHUD;
         OnAcousticAngleUpdated += UpdateAcousticBeam;
         OnVideoFrameReceived += UpdateVideoFrame;
+        OnUartDebugUpdated += UpdateUartDebug;
+        OnSpeechCommandParsed += UpdateSpeechCommandParsed;
         OnConnectionStateChanged += UpdateConnectionState;
         OnLatencyUpdated += UpdateLatency;
         OnPttAmplitudeUpdated += UpdatePttAmplitude;
@@ -251,6 +263,8 @@ public class RobotManager : MonoBehaviour
         OnTelemetryUpdated -= UpdateHUD;
         OnAcousticAngleUpdated -= UpdateAcousticBeam;
         OnVideoFrameReceived -= UpdateVideoFrame;
+        OnUartDebugUpdated -= UpdateUartDebug;
+        OnSpeechCommandParsed -= UpdateSpeechCommandParsed;
         OnConnectionStateChanged -= UpdateConnectionState;
         OnLatencyUpdated -= UpdateLatency;
         OnPttAmplitudeUpdated -= UpdatePttAmplitude;
@@ -324,6 +338,29 @@ public class RobotManager : MonoBehaviour
         OnVideoFrameReceived?.Invoke(jpegBytes);
     }
 
+    private void HandleUartDebugJsonReceived(string uartDebugJson)
+    {
+        if (mainThreadContext != null && SynchronizationContext.Current != mainThreadContext)
+        {
+            mainThreadContext.Post(_ => HandleUartDebugJsonReceived(uartDebugJson), null);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(uartDebugJson))
+        {
+            return;
+        }
+
+        try
+        {
+            OnUartDebugUpdated?.Invoke(JsonUtility.FromJson<UartDebugData>(uartDebugJson));
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"RobotManager: uart_debug parse failed: {ex.Message}");
+        }
+    }
+
     private void HandleConnectionStateChanged(NetworkConnectionState state)
     {
         if (mainThreadContext != null && SynchronizationContext.Current != mainThreadContext)
@@ -333,6 +370,29 @@ public class RobotManager : MonoBehaviour
         }
 
         OnConnectionStateChanged?.Invoke(state);
+    }
+
+    private void HandleSpeechCommandParsedJsonReceived(string speechCommandJson)
+    {
+        if (mainThreadContext != null && SynchronizationContext.Current != mainThreadContext)
+        {
+            mainThreadContext.Post(_ => HandleSpeechCommandParsedJsonReceived(speechCommandJson), null);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(speechCommandJson))
+        {
+            return;
+        }
+
+        try
+        {
+            OnSpeechCommandParsed?.Invoke(JsonUtility.FromJson<SpeechCommandParsedData>(speechCommandJson));
+        }
+        catch (Exception ex)
+        {
+            Debug.LogWarning($"RobotManager: speech_command_parsed parse failed: {ex.Message}");
+        }
     }
 
     private void HandleLatencyUpdated(float latencyMs)
@@ -392,11 +452,27 @@ public class RobotManager : MonoBehaviour
         }
     }
 
+    private void UpdateUartDebug(UartDebugData data)
+    {
+        if (uiManager != null)
+        {
+            uiManager.UpdateUartDebug(data);
+        }
+    }
+
     private void UpdateConnectionState(NetworkConnectionState state)
     {
         if (uiManager != null)
         {
             uiManager.UpdateConnectionState(state);
+        }
+    }
+
+    private void UpdateSpeechCommandParsed(SpeechCommandParsedData data)
+    {
+        if (uiManager != null)
+        {
+            uiManager.UpdateSpeechCommandParsed(data);
         }
     }
 

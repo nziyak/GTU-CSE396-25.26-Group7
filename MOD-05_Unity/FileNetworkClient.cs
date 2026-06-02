@@ -20,6 +20,8 @@ public class FileNetworkClient : INetworkClient
 
     public event Action<string> OnTelemetryJsonReceived;
     public event Action<byte[]> OnVideoFrameReceived;
+    public event Action<string> OnUartDebugJsonReceived;
+    public event Action<string> OnSpeechCommandParsedJsonReceived;
     public event Action<NetworkConnectionState> OnConnectionStateChanged;
     public event Action<float> OnLatencyUpdated;
     public bool IsConnected => cancellationTokenSource != null && !cancellationTokenSource.IsCancellationRequested;

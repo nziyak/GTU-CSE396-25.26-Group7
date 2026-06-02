@@ -18,6 +18,16 @@ public interface INetworkClient
     event Action<byte[]> OnVideoFrameReceived;
 
     /// <summary>
+    /// Fired with raw diagnostic JSON received from MOD-04 uart_debug events.
+    /// </summary>
+    event Action<string> OnUartDebugJsonReceived;
+
+    /// <summary>
+    /// Fired with raw parsed-STT JSON received from MOD-04 speech_command_parsed events.
+    /// </summary>
+    event Action<string> OnSpeechCommandParsedJsonReceived;
+
+    /// <summary>
     /// Fired whenever the concrete client enters Connecting, Connected, or Disconnected.
     /// </summary>
     event Action<NetworkConnectionState> OnConnectionStateChanged;

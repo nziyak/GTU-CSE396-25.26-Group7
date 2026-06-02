@@ -24,10 +24,21 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Text smokeStatusText;
     [SerializeField] private Text victimStatusText;
     [SerializeField] private Text stuckStatusText;
+    [SerializeField] private Text positionText;
+    [SerializeField] private Text priorityLevelText;
+    [SerializeField] private Text acousticStatusText;
     [SerializeField] private Text connectionStatusText;
     [SerializeField] private Text latencyText;
     [SerializeField] private Text pttStateText;
     [SerializeField] private RawImage videoFrameImage;
+
+    [Header("Optional UART Debug Labels")]
+    [SerializeField] private Text uartConnectionText;
+    [SerializeField] private Text uartDistanceText;
+    [SerializeField] private Text uartOrientationText;
+    [SerializeField] private Text uartEnvironmentText;
+    [SerializeField] private Text uartMicrophoneText;
+    [SerializeField] private Text speechCommandText;
 
     [Header("Feedback Widgets")]
     [SerializeField] private Slider pttAmplitudeSlider;
@@ -65,9 +76,18 @@ public class UIManager : MonoBehaviour
         smokeStatusText = smokeStatusText != null ? smokeStatusText : FindText("SmokeStatusText");
         victimStatusText = victimStatusText != null ? victimStatusText : FindText("VictimStatusText");
         stuckStatusText = stuckStatusText != null ? stuckStatusText : FindText("StuckStatusText");
+        positionText = positionText != null ? positionText : FindText("PositionText");
+        priorityLevelText = priorityLevelText != null ? priorityLevelText : FindText("PriorityLevelText");
+        acousticStatusText = acousticStatusText != null ? acousticStatusText : FindText("AcousticStatusText");
         connectionStatusText = connectionStatusText != null ? connectionStatusText : FindText("ConnectionStatusText");
         latencyText = latencyText != null ? latencyText : FindText("LatencyText");
         pttStateText = pttStateText != null ? pttStateText : FindText("PTTStateText");
+        uartConnectionText = uartConnectionText != null ? uartConnectionText : FindText("UartConnectionText");
+        uartDistanceText = uartDistanceText != null ? uartDistanceText : FindText("UartDistanceText");
+        uartOrientationText = uartOrientationText != null ? uartOrientationText : FindText("UartOrientationText");
+        uartEnvironmentText = uartEnvironmentText != null ? uartEnvironmentText : FindText("UartEnvironmentText");
+        uartMicrophoneText = uartMicrophoneText != null ? uartMicrophoneText : FindText("UartMicrophoneText");
+        speechCommandText = speechCommandText != null ? speechCommandText : FindText("SpeechCommandText");
 
         videoFrameImage = videoFrameImage != null ? videoFrameImage : FindComponent<RawImage>("VideoFrameRawImage");
         pttAmplitudeSlider = pttAmplitudeSlider != null ? pttAmplitudeSlider : FindComponent<Slider>("PTTAmplitudeSlider");
@@ -165,6 +185,72 @@ public class UIManager : MonoBehaviour
         UpdateSmokeStatus(data.smokeDetected);
         UpdateVictimStatus(data.victimStatus);
         UpdateStuckStatus(data.isStuck);
+        UpdatePosition(data.posX, data.posY);
+        UpdatePriorityLevel(data.priorityLevel);
+        UpdateAcousticStatus(data.acousticHit, data.acousticAngle);
+    }
+
+    public void UpdatePosition(float posX, float posY)
+    {
+        if (positionText != null)
+        {
+            positionText.text = $"POSITION  X: {posX:0.0}  Y: {posY:0.0}";
+        }
+    }
+
+    public void UpdatePriorityLevel(int priorityLevel)
+    {
+        if (priorityLevelText != null)
+        {
+            priorityLevelText.text = $"PRIORITY  {priorityLevel} - {ResolvePriorityLabel(priorityLevel)}";
+        }
+    }
+
+    public void UpdateAcousticStatus(bool acousticHit, float acousticAngle)
+    {
+        if (acousticStatusText != null)
+        {
+            acousticStatusText.text = acousticHit
+                ? $"ACOUSTIC HIT  {acousticAngle:0.0} deg"
+                : "ACOUSTIC  CLEAR";
+        }
+    }
+
+    public void UpdateUartDebug(UartDebugData data)
+    {
+        if (uartConnectionText != null)
+        {
+            uartConnectionText.text = data.connected ? "UART  CONNECTED" : "UART  DISCONNECTED";
+            uartConnectionText.color = data.connected ? connectedColor : disconnectedColor;
+        }
+
+        if (uartDistanceText != null)
+        {
+            uartDistanceText.text = $"DISTANCE  FRONT: {data.distFront} cm  BACK: {data.distBack} cm";
+        }
+
+        if (uartOrientationText != null)
+        {
+            uartOrientationText.text = $"IMU  YAW: {data.yaw:0.0}  PITCH: {data.pitch:0.0}  ROLL: {data.roll:0.0}";
+        }
+
+        if (uartEnvironmentText != null)
+        {
+            uartEnvironmentText.text = $"UART ENV  TEMP: {data.temp:0.0} C  HUM: {data.hum:0.0}%";
+        }
+
+        if (uartMicrophoneText != null)
+        {
+            uartMicrophoneText.text = $"MIC  {data.mic}";
+        }
+    }
+
+    public void UpdateSpeechCommandParsed(SpeechCommandParsedData data)
+    {
+        if (speechCommandText != null)
+        {
+            speechCommandText.text = $"VOICE  {data.intent}  ({data.confidence:0.00})  \"{data.rawText}\"";
+        }
     }
 
     /// <summary>
@@ -295,6 +381,21 @@ public class UIManager : MonoBehaviour
                 return Color.green;
             default:
                 return normalTextColor;
+        }
+    }
+
+    private static string ResolvePriorityLabel(int priorityLevel)
+    {
+        switch (priorityLevel)
+        {
+            case 1:
+                return "TRAPPED";
+            case 2:
+                return "LYING";
+            case 3:
+                return "STANDING";
+            default:
+                return "NONE";
         }
     }
 

@@ -22,6 +22,8 @@ public class WebSocketClient : INetworkClient
 {
     private const string TelemetryEventName = "telemetry_update";
     private const string VideoFrameEventName = "video_frame";
+    private const string UartDebugEventName = "uart_debug";
+    private const string SpeechCommandParsedEventName = "speech_command_parsed";
     private const string UnityPingEventName = "unity_ping";
     private const string UnityPongEventName = "unity_pong";
     private const string OperatorCommandEventName = "operator_command";
@@ -45,6 +47,8 @@ public class WebSocketClient : INetworkClient
 
     public event Action<string> OnTelemetryJsonReceived;
     public event Action<byte[]> OnVideoFrameReceived;
+    public event Action<string> OnUartDebugJsonReceived;
+    public event Action<string> OnSpeechCommandParsedJsonReceived;
     public event Action<NetworkConnectionState> OnConnectionStateChanged;
     public event Action<float> OnLatencyUpdated;
     public bool IsConnected => isConnected;
@@ -303,6 +307,18 @@ public class WebSocketClient : INetworkClient
             {
                 mainThreadContext.Post(_ => OnVideoFrameReceived?.Invoke(jpegBytes), null);
             }
+            return;
+        }
+
+        if (string.Equals(eventName, UartDebugEventName, StringComparison.Ordinal))
+        {
+            mainThreadContext.Post(_ => OnUartDebugJsonReceived?.Invoke(payloadJson), null);
+            return;
+        }
+
+        if (string.Equals(eventName, SpeechCommandParsedEventName, StringComparison.Ordinal))
+        {
+            mainThreadContext.Post(_ => OnSpeechCommandParsedJsonReceived?.Invoke(payloadJson), null);
             return;
         }
 
