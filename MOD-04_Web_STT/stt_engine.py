@@ -1,57 +1,79 @@
 import json
+import os
+import io
+import wave
 # pyrefly: ignore [missing-import]
 from vosk import Model, KaldiRecognizer
 from stt_engine_interface import ISTTEngine, VoiceCommandData
 
 class STTEngine(ISTTEngine):
     """
-    @brief Vosk tabanlı çevrimdışı Speech-to-Text motoru.
-           Raspberry Pi üzerinde yüksek performans için optimize edilmiştir.
+    @brief Vosk-based offline Speech-to-Text engine.
+           Optimized for high performance on Raspberry Pi.
     """
     def __init__(self):
         self.model = None
 
     def load_offline_model(self, model_path: str) -> bool:
         """
-        @brief Vosk modelini belleğe yükler.
-        @param model_path Model dosyalarının bulunduğu klasör yolu
-        @return Yükleme başarılıysa True
+        @brief Loads the Vosk model into memory.
+        @param model_path Directory path to the model weights.
+        @return True if loaded successfully.
         """
         try:
-            print(f"Yükleniyor: Vosk modeli ({model_path})...")
-            self.model = Model(model_path)
-            print("Model başarıyla yüklendi.")
+            resolved_path = model_path
+            # If not found in the current working directory, try relative search based on this script's directory
+            if not os.path.isabs(model_path) and not os.path.exists(model_path):
+                possible_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), model_path)
+                if os.path.exists(possible_path):
+                    resolved_path = possible_path
+            
+            print(f"Loading: Vosk model ({resolved_path})...")
+            self.model = Model(resolved_path)
+            print("Model loaded successfully.")
             return True
         except Exception as e:
-            print(f"Model yüklenirken hata oluştu: {e}")
+            print(f"Error loading model: {e}")
             return False
 
     def process_audio_blob(self, wav_bytes: bytes) -> VoiceCommandData:
         """
-        @brief .wav bayt dizisini alır ve içindeki sesli komutu metne dönüştürüp niyet (intent) çıkarır.
-        @param wav_bytes İşlenecek ses verisi
-        @return Çözümlenmiş komut verisi
+        @brief Takes a .wav byte array, converts the voice command to text, and extracts intent.
+        @param wav_bytes Audio data to be processed.
+        @return Parsed voice command data.
         """
         if not self.model:
-            raise RuntimeError("Model henüz yüklenmedi. Önce load_offline_model() çağrılmalıdır.")
+            raise RuntimeError("Model is not loaded. Call load_offline_model() first.")
         
-        # Vosk küçük (small) modelleri için genel varsayılan örnekleme hızı 16000 Hz'dir.
-        # İdeal olarak wav_bytes içinden wav header parse edilerek samplerate alınmalıdır,
-        # ancak basitlik adına burada sabit 16000 Hz kabul ediyoruz.
-        rec = KaldiRecognizer(self.model, 16000)
+        # If the data contains a RIFF/WAVE header, parse it using the wave module and extract raw PCM bytes.
+        if wav_bytes.startswith(b'RIFF'):
+            try:
+                with wave.open(io.BytesIO(wav_bytes), "rb") as wf:
+                    samplerate = wf.getframerate()
+                    pcm_data = wf.readframes(wf.getnframes())
+                    print(f"[STT] WAV header detected. Samplerate={samplerate} Hz, DataSize={len(pcm_data)} bytes")
+            except Exception as e:
+                print(f"[STT] Error parsing WAV header: {e}. Defaulting to 16000 Hz and raw bytes.")
+                pcm_data = wav_bytes
+                samplerate = 16000
+        else:
+            pcm_data = wav_bytes
+            samplerate = 16000
+
+        rec = KaldiRecognizer(self.model, samplerate)
         
-        # Gelen tüm ses verisini işleyiciye kabul ettiriyoruz
-        rec.AcceptWaveform(wav_bytes)
+        # Accept the audio waveform into the recognizer
+        rec.AcceptWaveform(pcm_data)
         
-        # Sonucu JSON formatından ayıklıyoruz
+        # Extract the result from JSON format
         res = json.loads(rec.Result())
         text = res.get("text", "")
         
-        # Basit Intent (Niyet) Çıkarımı
+        # Simple Intent Extraction
         intent = "UNKNOWN"
-        confidence = 1.0 # Vosk, varsayılan olarak basit bir güven skoru dönmez, burayı sabitledik
+        confidence = 1.0 # Vosk does not return a confidence score by default, so we hardcode it to 1.0
         
-        # Basit kural tabanlı intent tespiti (gelecekte NLP modeliyle genişletilebilir)
+        # Rule-based simple intent recognition (can be expanded with an NLP model later)
         lower_text = text.lower()
         if "dur" in lower_text or "stop" in lower_text:
             intent = "STOP"
@@ -62,6 +84,6 @@ class STTEngine(ISTTEngine):
         elif "fener" in lower_text or "beacon" in lower_text:
             intent = "ACTIVATE_BEACON"
             
-        print(f"[STT] Algılanan Metin: '{text}' -> Çıkarılan Niyet: {intent}")
+        print(f"[STT] Recognized Text: '{text}' -> Extracted Intent: {intent}")
             
         return VoiceCommandData(raw_text=text, intent=intent, confidence=confidence)

@@ -7,19 +7,19 @@ zip_path = "vosk-model-small-tr.zip"
 target_dir = "vosk-model"
 
 if os.path.exists(target_dir):
-    print(f"'{target_dir}' klasörü zaten var. Model indirme işlemi atlanıyor.")
+    print(f"'{target_dir}' already exists. Skipping model download.")
 else:
-    print("Vosk Türkçe modeli indiriliyor (yaklaşık 35 MB)... Lütfen bekleyin.")
+    print("Downloading Vosk Turkish model (approx. 35 MB)... Please wait.")
     urllib.request.urlretrieve(model_url, zip_path)
     
-    print("Model arşivden çıkarılıyor...")
+    print("Extracting model from zip archive...")
     with zipfile.ZipFile(zip_path, 'r') as zip_ref:
         zip_ref.extractall(".")
         
-    print("Klasör yeniden adlandırılıyor...")
+    print("Renaming folder...")
     os.rename("vosk-model-small-tr-0.3", target_dir)
     
-    print("Geçici zip dosyası siliniyor...")
+    print("Deleting temporary zip file...")
     os.remove(zip_path)
     
-    print("İşlem tamam! Model başarıyla yüklendi.")
+    print("Process completed! Model loaded successfully.")

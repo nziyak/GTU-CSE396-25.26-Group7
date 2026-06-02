@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MOD-04 Test İstemcisi</title>
+    <title>MOD-04 Test Client</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
@@ -11,42 +11,42 @@
     </style>
     <script type="text/javascript" charset="utf-8">
         document.addEventListener("DOMContentLoaded", function() {
-            // Sunucuya bağlan (varsayılan localhost:5001)
+            // Connect to server (default localhost:5001)
             var socket = io('http://localhost:5001');
             
             socket.on('connect', function() {
-                document.getElementById('status').innerText = 'Bağlandı! 🟢';
+                document.getElementById('status').innerText = 'Connected! 🟢';
             });
             
             socket.on('disconnect', function() {
-                document.getElementById('status').innerText = 'Bağlantı Kesildi! 🔴';
+                document.getElementById('status').innerText = 'Disconnected! 🔴';
             });
             
-            // Telemetri verisini dinle
+            // Listen to telemetry data
             socket.on('telemetry_update', function(data) {
                 var logDiv = document.getElementById('log');
                 var timestamp = new Date().toLocaleTimeString();
                 logDiv.innerHTML = `<b>[${timestamp}]</b> ${JSON.stringify(data)}<br>` + logDiv.innerHTML;
             });
             
-            // Butona basıldığında komut gönder
+            // Send command on button click
             document.getElementById('sendCmdBtn').onclick = function() {
                 var cmd = { action: 'MOVE_FORWARD', speed: 50 };
                 socket.emit('operator_command', cmd);
-                console.log("Komut gönderildi:", cmd);
-                alert("Komut sunucuya gönderildi! Sunucu terminalini kontrol edin.");
+                console.log("Command sent:", cmd);
+                alert("Command sent to server! Check the server terminal.");
             };
         });
     </script>
 </head>
 <body>
-    <h2>MOD-04 WebSocket Test İstemcisi (Unity Simülasyonu)</h2>
-    <p><b>Sunucu Durumu:</b> <span id="status">Bağlanıyor... 🟡</span></p>
+    <h2>MOD-04 WebSocket Test Client (Unity Simulation)</h2>
+    <p><b>Server Status:</b> <span id="status">Connecting... 🟡</span></p>
     
-    <button id="sendCmdBtn" class="btn">Örnek Operatör Komutu Gönder (İleri)</button>
+    <button id="sendCmdBtn" class="btn">Send Example Operator Override Command (FORWARD)</button>
     
     <hr>
-    <h3>Canlı Telemetri Akışı:</h3>
-    <div id="log"><i>Veri bekleniyor...</i></div>
+    <h3>Live Telemetry Stream:</h3>
+    <div id="log"><i>Waiting for data...</i></div>
 </body>
 </html>

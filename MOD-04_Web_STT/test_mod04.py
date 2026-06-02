@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 from comms_dashboard import WebDashboard
@@ -5,7 +6,7 @@ from comms_dashboard_interface import AugmentedStatusReport
 from stt_engine import STTEngine
 
 def simulate_telemetry(dashboard: WebDashboard):
-    """Her saniye sahte (mock) telemetri verisi yayınlayan arkaplan thread'i."""
+    """Background thread that broadcasts mock telemetry data every second."""
     x = 0.0
     while True:
         report = AugmentedStatusReport(
@@ -20,29 +21,30 @@ def simulate_telemetry(dashboard: WebDashboard):
             acoustic_angle=90.0
         )
         dashboard.broadcast_telemetry(report)
-        print(f"[Simülasyon] Telemetri gönderildi: X={x}")
+        print(f"[Simulation] Telemetry broadcasted: X={x}")
         x += 0.5
         time.sleep(2)
 
 if __name__ == "__main__":
-    print("=== MOD-04 Test Sistemi Başlatılıyor ===")
+    print("=== MOD-04 Test System Starting ===")
     
-    # 1. STT Motorunun Başlatılması
+    # 1. Initialize the STT Engine
     stt = STTEngine()
-    if stt.load_offline_model("vosk-model"):
-        print("[STT] Motor hazır!")
+    model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vosk-model")
+    if stt.load_offline_model(model_path):
+        print("[STT] Engine ready!")
     else:
-        print("[STT] Uyarı: Model yüklenemedi. Sadece Dashboard test edilecek.")
+        print("[STT] Warning: Model could not be loaded. Running dashboard only.")
     
-    # 2. Web Dashboard'un Başlatılması
-    dashboard = WebDashboard()
+    # 2. Initialize the Web Dashboard
+    dashboard = WebDashboard(stt_engine=stt)
     
-    # Telemetri simülasyonunu arka planda başlat
+    # Start telemetry simulation in the background
     sim_thread = threading.Thread(target=simulate_telemetry, args=(dashboard,), daemon=True)
     sim_thread.start()
     
-    # Sunucuyu ana thread'de bloklayarak başlat
+    # Start the server blocking the main thread
     try:
         dashboard.start_server(port=5001)
     except KeyboardInterrupt:
-        print("\nSistem kapatılıyor...")
+        print("\nSystem shutting down...")
