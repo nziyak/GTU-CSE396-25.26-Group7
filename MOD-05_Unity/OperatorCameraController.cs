@@ -10,6 +10,7 @@ public class OperatorCameraController : MonoBehaviour
     [Header("Target")]
     [SerializeField] private Transform orbitTarget;
     [SerializeField] private Vector3 targetOffset = Vector3.up;
+    [SerializeField] private bool followTargetOnStart = false;
 
     [Header("Orbit")]
     [SerializeField] private float orbitSpeed = 160f;
@@ -18,19 +19,22 @@ public class OperatorCameraController : MonoBehaviour
 
     [Header("Pan / Zoom")]
     [SerializeField] private float panSpeed = 0.02f;
+    [SerializeField] private float keyboardPanSpeed = 8f;
     [SerializeField] private float zoomSpeed = 4f;
     [SerializeField] private float minDistance = 3f;
-    [SerializeField] private float maxDistance = 25f;
+    [SerializeField] private float maxDistance = 45f;
     [SerializeField] private float minCameraHeight = 1.2f;
-    [SerializeField] private float maxPanRadius = 18f;
+    [SerializeField] private float maxPanRadius = 40f;
 
     private float yaw;
     private float pitch = 45f;
     private float distance = 10f;
     private Vector3 focusPoint;
+    private bool followTarget;
 
     private void Start()
     {
+        followTarget = followTargetOnStart;
         focusPoint = orbitTarget != null ? orbitTarget.position + targetOffset : Vector3.zero;
         Vector3 offset = transform.position - focusPoint;
         distance = Mathf.Clamp(offset.magnitude, minDistance, maxDistance);
@@ -42,7 +46,17 @@ public class OperatorCameraController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (orbitTarget != null)
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            FocusOnTarget();
+        }
+
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            followTarget = !followTarget;
+        }
+
+        if (orbitTarget != null && followTarget)
         {
             focusPoint = Vector3.Lerp(focusPoint, orbitTarget.position + targetOffset, Time.deltaTime * 4f);
         }
@@ -58,8 +72,11 @@ public class OperatorCameraController : MonoBehaviour
         {
             Vector3 pan = (-transform.right * Input.GetAxis("Mouse X")) + (-transform.up * Input.GetAxis("Mouse Y"));
             focusPoint += pan * (panSpeed * distance);
+            followTarget = false;
             ClampFocusPoint();
         }
+
+        HandleKeyboardPan();
 
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (Mathf.Abs(scroll) > Mathf.Epsilon)
@@ -77,6 +94,35 @@ public class OperatorCameraController : MonoBehaviour
         {
             focusPoint = orbitTarget.position + targetOffset;
         }
+    }
+
+    public void FocusOnTarget()
+    {
+        if (orbitTarget == null)
+        {
+            return;
+        }
+
+        focusPoint = orbitTarget.position + targetOffset;
+        followTarget = true;
+    }
+
+    private void HandleKeyboardPan()
+    {
+        float horizontal = Input.GetAxisRaw("Horizontal");
+        float vertical = Input.GetAxisRaw("Vertical");
+
+        if (Mathf.Approximately(horizontal, 0f) && Mathf.Approximately(vertical, 0f))
+        {
+            return;
+        }
+
+        Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+        Vector3 right = Vector3.ProjectOnPlane(transform.right, Vector3.up).normalized;
+        Vector3 movement = (right * horizontal) + (forward * vertical);
+        focusPoint += movement.normalized * (keyboardPanSpeed * Time.deltaTime);
+        followTarget = false;
+        ClampFocusPoint();
     }
 
     private void ApplyCameraPose()

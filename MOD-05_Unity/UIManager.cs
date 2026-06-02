@@ -40,6 +40,13 @@ public class UIManager : MonoBehaviour
     [SerializeField] private Text uartMicrophoneText;
     [SerializeField] private Text speechCommandText;
 
+    [Header("Right Perception Panel Labels")]
+    [SerializeField] private Text perceptionVictimStatusText;
+    [SerializeField] private Text perceptionPriorityText;
+    [SerializeField] private Text perceptionAcousticText;
+    [SerializeField] private Text perceptionSpeechText;
+    [SerializeField] private Text cameraPlaceholderText;
+
     [Header("Feedback Widgets")]
     [SerializeField] private Slider pttAmplitudeSlider;
     [SerializeField] private Slider temperatureGauge;
@@ -88,6 +95,11 @@ public class UIManager : MonoBehaviour
         uartEnvironmentText = uartEnvironmentText != null ? uartEnvironmentText : FindText("UartEnvironmentText");
         uartMicrophoneText = uartMicrophoneText != null ? uartMicrophoneText : FindText("UartMicrophoneText");
         speechCommandText = speechCommandText != null ? speechCommandText : FindText("SpeechCommandText");
+        perceptionVictimStatusText = perceptionVictimStatusText != null ? perceptionVictimStatusText : FindText("PerceptionVictimStatusText");
+        perceptionPriorityText = perceptionPriorityText != null ? perceptionPriorityText : FindText("PerceptionPriorityText");
+        perceptionAcousticText = perceptionAcousticText != null ? perceptionAcousticText : FindText("PerceptionAcousticText");
+        perceptionSpeechText = perceptionSpeechText != null ? perceptionSpeechText : FindText("PerceptionSpeechText");
+        cameraPlaceholderText = cameraPlaceholderText != null ? cameraPlaceholderText : FindText("CameraPlaceholderText");
 
         videoFrameImage = videoFrameImage != null ? videoFrameImage : FindComponent<RawImage>("VideoFrameRawImage");
         pttAmplitudeSlider = pttAmplitudeSlider != null ? pttAmplitudeSlider : FindComponent<Slider>("PTTAmplitudeSlider");
@@ -155,6 +167,12 @@ public class UIManager : MonoBehaviour
 
         victimStatusText.text = status.ToString().ToUpperInvariant();
         victimStatusText.color = ResolveVictimStatusColor(status);
+
+        if (perceptionVictimStatusText != null)
+        {
+            perceptionVictimStatusText.text = $"VICTIM: {status.ToString().ToUpperInvariant()}";
+            perceptionVictimStatusText.color = ResolveVictimStatusColor(status);
+        }
     }
 
     /// <summary>Updates the MOD-01 stuck alert shown to the operator.</summary>
@@ -204,6 +222,11 @@ public class UIManager : MonoBehaviour
         {
             priorityLevelText.text = $"PRIORITY  {priorityLevel} - {ResolvePriorityLabel(priorityLevel)}";
         }
+
+        if (perceptionPriorityText != null)
+        {
+            perceptionPriorityText.text = $"PRIORITY: {priorityLevel} - {ResolvePriorityLabel(priorityLevel)}";
+        }
     }
 
     public void UpdateAcousticStatus(bool acousticHit, float acousticAngle)
@@ -213,6 +236,13 @@ public class UIManager : MonoBehaviour
             acousticStatusText.text = acousticHit
                 ? $"ACOUSTIC HIT  {acousticAngle:0.0} deg"
                 : "ACOUSTIC  CLEAR";
+        }
+
+        if (perceptionAcousticText != null)
+        {
+            perceptionAcousticText.text = acousticHit
+                ? $"ACOUSTIC: HIT {acousticAngle:0.0} deg"
+                : "ACOUSTIC: CLEAR";
         }
     }
 
@@ -251,6 +281,11 @@ public class UIManager : MonoBehaviour
         {
             speechCommandText.text = $"VOICE  {data.intent}  ({data.confidence:0.00})  \"{data.rawText}\"";
         }
+
+        if (perceptionSpeechText != null)
+        {
+            perceptionSpeechText.text = $"VOICE: {data.intent} ({data.confidence:0.00})";
+        }
     }
 
     /// <summary>
@@ -272,6 +307,13 @@ public class UIManager : MonoBehaviour
         if (!videoTexture.LoadImage(jpegBytes, false))
         {
             Debug.LogWarning("UIManager: Failed to decode MOD-04 JPEG frame.");
+            return;
+        }
+
+        videoFrameImage.color = Color.white;
+        if (cameraPlaceholderText != null)
+        {
+            cameraPlaceholderText.gameObject.SetActive(false);
         }
     }
 
