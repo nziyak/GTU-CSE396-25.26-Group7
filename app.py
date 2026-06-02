@@ -12,6 +12,7 @@ from ai_vision import VisionPipeline
 from acoustic_homing import AcousticHomingBridge, MotorDirection
 from comms_dashboard import WebDashboard
 from stm32_bridge import STM32Bridge
+from state_manager import RobotStateManager
 
 
 def fsm_transition_callback(bearing: float):
@@ -23,6 +24,7 @@ def simulate_robot_loop(
     dashboard: WebDashboard,
     acoustic_bridge: AcousticHomingBridge,
     vision: VisionPipeline,
+    state_manager: RobotStateManager,
 ):
     """
     End-to-end integration loop for MOD-02 + MOD-03 + MOD-04 + MOD-05.
@@ -62,16 +64,18 @@ def simulate_robot_loop(
                 is_sound_active = True
                 print("\n[SIM] New acoustic event detected.")
 
-        report = vision.build_augmented_status_report(
-            pos_x=0.0,
-            pos_y=0.0,
-            temperature=25.3,
-            smoke_detected=False,
-            is_stuck=False,
-            acoustic_hit=is_sound_active,
-            acoustic_angle=current_bearing,
+        # Update state from Acoustics (MOD-03)
+        state_manager.update_from_acoustic(acoustic_hit=is_sound_active, acoustic_angle=current_bearing)
+        
+        # Update state from Vision (MOD-02)
+        v_fields = vision.build_dashboard_fields()
+        state_manager.update_from_vision(
+            victim_status=str(v_fields.get("victim_status", "NONE")), 
+            priority_level=int(v_fields.get("priority_level", 0))
         )
-        dashboard.broadcast_telemetry(report)
+
+        # Broadcast the merged state
+        dashboard.broadcast_telemetry(state_manager.get_report())
 
         latest_frame = vision.get_latest_frame_jpeg()
         if latest_frame:
@@ -95,12 +99,13 @@ if __name__ == "__main__":
     dashboard = WebDashboard()
     acoustic_bridge = AcousticHomingBridge(fsm_transition_callback=fsm_transition_callback)
     vision = VisionPipeline()
+    state_manager = RobotStateManager()
 
     if not vision.initialize_camera():
         raise RuntimeError("MOD-02 Vision could not be initialized.")
 
     # Initialize STM32 Bridge
-    stm32_bridge = STM32Bridge(port='/dev/ttyACM0', baudrate=115200, dashboard=dashboard)
+    stm32_bridge = STM32Bridge(port='/dev/ttyACM0', baudrate=115200, dashboard=dashboard, state_manager=state_manager)
     if stm32_bridge.connect():
         stm32_bridge.start()
     else:
@@ -108,7 +113,7 @@ if __name__ == "__main__":
 
     sim_thread = threading.Thread(
         target=simulate_robot_loop,
-        args=(dashboard, acoustic_bridge, vision),
+        args=(dashboard, acoustic_bridge, vision, state_manager),
         daemon=True,
     )
     sim_thread.start()
