@@ -13,6 +13,7 @@ from acoustic_homing import AcousticHomingBridge, MotorDirection
 from comms_dashboard import WebDashboard
 from stm32_bridge import STM32Bridge
 from state_manager import RobotStateManager
+from stt_engine import STTEngine
 
 
 def fsm_transition_callback(bearing: float):
@@ -100,6 +101,14 @@ if __name__ == "__main__":
     acoustic_bridge = AcousticHomingBridge(fsm_transition_callback=fsm_transition_callback)
     vision = VisionPipeline()
     state_manager = RobotStateManager()
+    stt_engine = STTEngine()
+
+    stt_model_path = os.path.join(REPO_ROOT, "MOD-04_Web_STT", "vosk-model")
+    if not stt_engine.load_offline_model(stt_model_path):
+        raise RuntimeError(f"MOD-04 STT model could not be loaded: {stt_model_path}")
+
+    dashboard.set_stt_engine(stt_engine)
+    dashboard.set_vision_pipeline(vision)
 
     if not vision.initialize_camera():
         raise RuntimeError("MOD-02 Vision could not be initialized.")

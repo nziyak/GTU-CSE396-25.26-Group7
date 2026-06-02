@@ -51,6 +51,7 @@ public class RobotManager : MonoBehaviour
     private void Awake()
     {
         mainThreadContext = SynchronizationContext.Current;
+        audioManager = new AudioManager();
         AutoBindSceneReferences();
     }
 
