@@ -1,52 +1,530 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>MOD-04 Test Client</title>
+    <title>Robot Control Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #log { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; }
-        .btn { padding: 10px 15px; background: #007bff; color: white; border: none; cursor: pointer; }
-        .btn:hover { background: #0056b3; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #21262d;
+            padding-bottom: 16px;
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #58a6ff;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: #161b22;
+            border: 1px solid #30363d;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #f85149;
+            transition: background 0.4s;
+        }
+
+        .dot.connected { background: #3fb950; box-shadow: 0 0 8px #3fb950; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: #161b22;
+            border: 1px solid #21262d;
+            border-radius: 10px;
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b949e;
+            margin-bottom: 10px;
+        }
+
+        .card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #e6edf3;
+        }
+
+        .card .unit {
+            font-size: 13px;
+            color: #8b949e;
+            margin-left: 4px;
+        }
+
+        .card .icon {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            font-size: 22px;
+            opacity: 0.3;
+        }
+
+        .card.alert-red { border-color: #f85149; background: #1c1016; }
+        .card.alert-yellow { border-color: #d29922; background: #161210; }
+        .card.alert-green { border-color: #3fb950; background: #0f1a12; }
+
+        .row2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .card-wide {
+            background: #161b22;
+            border: 1px solid #21262d;
+            border-radius: 10px;
+            padding: 18px;
+        }
+
+        .card-wide .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b949e;
+            margin-bottom: 14px;
+        }
+
+        /* Position map */
+        .pos-map {
+            width: 100%;
+            aspect-ratio: 1;
+            background: #0d1117;
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pos-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #58a6ff;
+            box-shadow: 0 0 12px #58a6ff;
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: left 0.5s, top 0.5s;
+        }
+
+        .grid-line {
+            position: absolute;
+            background: #21262d;
+        }
+
+        /* Acoustic compass */
+        .compass-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        canvas#compass {
+            border-radius: 50%;
+        }
+
+        .compass-val {
+            font-size: 22px;
+            font-weight: 700;
+            color: #58a6ff;
+        }
+
+        /* Victim status */
+        .victim-status {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 10px;
+        }
+
+        .victim-icon { font-size: 52px; }
+
+        .victim-label {
+            font-size: 18px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .priority-bar {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .pbar {
+            width: 24px;
+            height: 8px;
+            border-radius: 4px;
+            background: #21262d;
+            transition: background 0.4s;
+        }
+
+        /* Commands */
+        .cmd-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .cmd-btn {
+            padding: 10px;
+            border: 1px solid #30363d;
+            background: #0d1117;
+            color: #e6edf3;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .cmd-btn:hover { background: #21262d; border-color: #58a6ff; }
+        .cmd-btn.forward { grid-column: 2; }
+
+        /* Log */
+        .log-box {
+            background: #0d1117;
+            border: 1px solid #21262d;
+            border-radius: 8px;
+            padding: 10px 14px;
+            height: 140px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            color: #8b949e;
+        }
+
+        .log-box .entry { margin-bottom: 4px; }
+        .log-box .entry span { color: #58a6ff; margin-right: 6px; }
+
+        /* Indicator row */
+        .indicators {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .ind-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #21262d;
+            transition: background 0.3s;
+        }
+
+        .ind-dot.on { background: #f85149; box-shadow: 0 0 6px #f85149; }
+        .ind-dot.on.safe { background: #3fb950; box-shadow: 0 0 6px #3fb950; }
     </style>
-    <script type="text/javascript" charset="utf-8">
-        document.addEventListener("DOMContentLoaded", function() {
-            // Connect to server (default localhost:5001)
-            var socket = io('http://localhost:5001');
-            
-            socket.on('connect', function() {
-                document.getElementById('status').innerText = 'Connected! 🟢';
-            });
-            
-            socket.on('disconnect', function() {
-                document.getElementById('status').innerText = 'Disconnected! 🔴';
-            });
-            
-            // Listen to telemetry data
-            socket.on('telemetry_update', function(data) {
-                var logDiv = document.getElementById('log');
-                var timestamp = new Date().toLocaleTimeString();
-                logDiv.innerHTML = `<b>[${timestamp}]</b> ${JSON.stringify(data)}<br>` + logDiv.innerHTML;
-            });
-            
-            // Send command on button click
-            document.getElementById('sendCmdBtn').onclick = function() {
-                var cmd = { action: 'MOVE_FORWARD', speed: 50 };
-                socket.emit('operator_command', cmd);
-                console.log("Command sent:", cmd);
-                alert("Command sent to server! Check the server terminal.");
-            };
-        });
-    </script>
 </head>
 <body>
-    <h2>MOD-04 WebSocket Test Client (Unity Simulation)</h2>
-    <p><b>Server Status:</b> <span id="status">Connecting... 🟡</span></p>
-    
-    <button id="sendCmdBtn" class="btn">Send Example Operator Override Command (FORWARD)</button>
-    
-    <hr>
-    <h3>Live Telemetry Stream:</h3>
-    <div id="log"><i>Waiting for data...</i></div>
+
+<header>
+    <h1>&#x1F916; Rescue Robot — Control Dashboard</h1>
+    <div class="status-badge">
+        <div class="dot" id="dot"></div>
+        <span id="status">Connecting...</span>
+    </div>
+</header>
+
+<!-- Top metric cards -->
+<div class="grid">
+    <div class="card" id="card-temp">
+        <div class="label">Temperature</div>
+        <div class="value" id="val-temp">--<span class="unit">°C</span></div>
+        <div class="icon">🌡️</div>
+    </div>
+    <div class="card" id="card-smoke">
+        <div class="label">Smoke Detected</div>
+        <div class="value" id="val-smoke">--</div>
+        <div class="icon">💨</div>
+    </div>
+    <div class="card" id="card-stuck">
+        <div class="label">Robot Status</div>
+        <div class="value" id="val-stuck">--</div>
+        <div class="icon">🤖</div>
+    </div>
+    <div class="card" id="card-acoustic">
+        <div class="label">Acoustic Hit</div>
+        <div class="value" id="val-acoustic-hit">--</div>
+        <div class="icon">🔊</div>
+    </div>
+</div>
+
+<!-- Middle row -->
+<div class="row2">
+
+    <!-- Position map -->
+    <div class="card-wide">
+        <div class="label">Position Map</div>
+        <div class="pos-map" id="posMap">
+            <!-- grid lines -->
+            <div class="grid-line" style="width:100%;height:1px;top:25%;left:0;"></div>
+            <div class="grid-line" style="width:100%;height:1px;top:50%;left:0;"></div>
+            <div class="grid-line" style="width:100%;height:1px;top:75%;left:0;"></div>
+            <div class="grid-line" style="width:1px;height:100%;top:0;left:25%;"></div>
+            <div class="grid-line" style="width:1px;height:100%;top:0;left:50%;"></div>
+            <div class="grid-line" style="width:1px;height:100%;top:0;left:75%;"></div>
+            <div class="pos-dot" id="posDot" style="left:50%;top:50%;"></div>
+        </div>
+        <div class="indicators" style="margin-top:10px;">
+            <div style="font-size:12px;color:#8b949e;">X: <span id="val-x" style="color:#e6edf3;">0</span></div>
+            <div style="font-size:12px;color:#8b949e;">Y: <span id="val-y" style="color:#e6edf3;">0</span></div>
+        </div>
+    </div>
+
+    <!-- Acoustic compass -->
+    <div class="card-wide">
+        <div class="label">Acoustic Bearing</div>
+        <div class="compass-wrap">
+            <canvas id="compass" width="160" height="160"></canvas>
+            <div class="compass-val"><span id="val-angle">0</span>°</div>
+        </div>
+    </div>
+
+    <!-- Victim status -->
+    <div class="card-wide">
+        <div class="label">Victim Detection</div>
+        <div class="victim-status">
+            <div class="victim-icon" id="victim-icon">❓</div>
+            <div class="victim-label" id="victim-label">UNKNOWN</div>
+            <div style="font-size:12px;color:#8b949e;">Priority Level</div>
+            <div class="priority-bar" id="priority-bar">
+                <div class="pbar" id="pb1"></div>
+                <div class="pbar" id="pb2"></div>
+                <div class="pbar" id="pb3"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Bottom row: commands + log -->
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;">
+
+    <div class="card-wide">
+        <div class="label">Operator Commands</div>
+        <div class="cmd-grid">
+            <div></div>
+            <button class="cmd-btn forward" onclick="sendCmd('MOVE_FORWARD')">▲ Forward</button>
+            <div></div>
+            <button class="cmd-btn" onclick="sendCmd('TURN_LEFT')">◀ Left</button>
+            <button class="cmd-btn" onclick="sendCmd('STOP')">■ Stop</button>
+            <button class="cmd-btn" onclick="sendCmd('TURN_RIGHT')">▶ Right</button>
+            <div></div>
+            <button class="cmd-btn" onclick="sendCmd('MOVE_BACKWARD')">▼ Back</button>
+            <div></div>
+        </div>
+    </div>
+
+    <div class="card-wide">
+        <div class="label">Telemetry Log</div>
+        <div class="log-box" id="log"><i style="color:#484f58;">Waiting for data...</i></div>
+    </div>
+
+</div>
+
+<script>
+    var socket = io('http://localhost:5001');
+    var angleHistory = 0;
+
+    socket.on('connect', function() {
+        document.getElementById('status').innerText = 'Connected';
+        document.getElementById('dot').classList.add('connected');
+    });
+
+    socket.on('disconnect', function() {
+        document.getElementById('status').innerText = 'Disconnected';
+        document.getElementById('dot').classList.remove('connected');
+    });
+
+    socket.on('telemetry_update', function(data) {
+        updateDashboard(data);
+        logEntry(data);
+    });
+
+    function updateDashboard(d) {
+        // Temperature
+        var temp = d.temperature !== undefined ? d.temperature : '--';
+        document.getElementById('val-temp').innerHTML = temp + '<span class="unit">°C</span>';
+        var cardTemp = document.getElementById('card-temp');
+        cardTemp.className = 'card' + (temp > 40 ? ' alert-red' : temp > 30 ? ' alert-yellow' : '');
+
+        // Smoke
+        var smoke = d.smokeDetected;
+        document.getElementById('val-smoke').innerText = smoke ? 'YES' : 'NO';
+        document.getElementById('card-smoke').className = 'card' + (smoke ? ' alert-red' : ' alert-green');
+
+        // Stuck
+        var stuck = d.isStuck;
+        document.getElementById('val-stuck').innerText = stuck ? 'STUCK' : 'MOVING';
+        document.getElementById('card-stuck').className = 'card' + (stuck ? ' alert-red' : ' alert-green');
+
+        // Acoustic hit
+        var hit = d.acousticHit;
+        document.getElementById('val-acoustic-hit').innerText = hit ? 'DETECTED' : 'SILENT';
+        document.getElementById('card-acoustic').className = 'card' + (hit ? ' alert-yellow' : '');
+
+        // Position
+        var px = d.posX || 0;
+        var py = d.posY || 0;
+        document.getElementById('val-x').innerText = px;
+        document.getElementById('val-y').innerText = py;
+        var mapEl = document.getElementById('posMap');
+        var mapW = mapEl.offsetWidth || 200;
+        var mapH = mapEl.offsetHeight || 200;
+        var dotLeft = Math.max(5, Math.min(95, 50 + px * 2)) + '%';
+        var dotTop  = Math.max(5, Math.min(95, 50 - py * 2)) + '%';
+        document.getElementById('posDot').style.left = dotLeft;
+        document.getElementById('posDot').style.top  = dotTop;
+
+        // Compass
+        var angle = d.acousticAngle || 0;
+        angleHistory = angle;
+        drawCompass(angle);
+        document.getElementById('val-angle').innerText = angle;
+
+        // Victim
+        var vs = (d.victimStatus || 'NONE').toUpperCase();
+        var pl = d.priorityLevel || 0;
+        var icons = { 'NONE': '❓', 'STANDING': '🧍', 'LYING': '🤕', 'TRAPPED': '🆘' };
+        var colors = { 'NONE': '#8b949e', 'STANDING': '#3fb950', 'LYING': '#d29922', 'TRAPPED': '#f85149' };
+        document.getElementById('victim-icon').innerText = icons[vs] || '❓';
+        document.getElementById('victim-label').innerText = vs;
+        document.getElementById('victim-label').style.color = colors[vs] || '#8b949e';
+
+        var barColors = ['#3fb950', '#d29922', '#f85149'];
+        for (var i = 1; i <= 3; i++) {
+            document.getElementById('pb' + i).style.background = (pl >= i) ? barColors[i-1] : '#21262d';
+        }
+    }
+
+    function drawCompass(angleDeg) {
+        var canvas = document.getElementById('compass');
+        var ctx = canvas.getContext('2d');
+        var cx = 80, cy = 80, r = 72;
+        ctx.clearRect(0, 0, 160, 160);
+
+        // Background circle
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+        ctx.fillStyle = '#0d1117';
+        ctx.fill();
+        ctx.strokeStyle = '#21262d';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Cardinal labels
+        ctx.fillStyle = '#484f58';
+        ctx.font = '11px Segoe UI';
+        ctx.textAlign = 'center';
+        ctx.fillText('N', cx, cy - r + 14);
+        ctx.fillText('S', cx, cy + r - 6);
+        ctx.fillText('E', cx + r - 8, cy + 4);
+        ctx.fillText('W', cx - r + 8, cy + 4);
+
+        // Tick marks
+        for (var i = 0; i < 36; i++) {
+            var a = (i * 10) * Math.PI / 180;
+            var inner = i % 9 === 0 ? r - 14 : r - 8;
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.sin(a) * inner, cy - Math.cos(a) * inner);
+            ctx.lineTo(cx + Math.sin(a) * (r - 3), cy - Math.cos(a) * (r - 3));
+            ctx.strokeStyle = '#30363d';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        // Needle
+        var rad = angleDeg * Math.PI / 180;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.sin(rad) * (r - 20), cy - Math.cos(rad) * (r - 20));
+        ctx.strokeStyle = '#58a6ff';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Center dot
+        ctx.beginPath();
+        ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#58a6ff';
+        ctx.fill();
+    }
+
+    function sendCmd(action) {
+        socket.emit('operator_command', { action: action, speed: 50 });
+        logRaw('CMD sent: ' + action);
+    }
+
+    function logEntry(data) {
+        var ts = new Date().toLocaleTimeString();
+        var line = JSON.stringify(data);
+        var logDiv = document.getElementById('log');
+        var el = document.createElement('div');
+        el.className = 'entry';
+        el.innerHTML = '<span>[' + ts + ']</span>' + line;
+        logDiv.insertBefore(el, logDiv.firstChild);
+        if (logDiv.children.length > 60) logDiv.removeChild(logDiv.lastChild);
+    }
+
+    function logRaw(msg) {
+        var ts = new Date().toLocaleTimeString();
+        var logDiv = document.getElementById('log');
+        var el = document.createElement('div');
+        el.className = 'entry';
+        el.innerHTML = '<span>[' + ts + ']</span>' + msg;
+        logDiv.insertBefore(el, logDiv.firstChild);
+    }
+
+    drawCompass(0);
+</script>
 </body>
 </html>
