@@ -222,6 +222,26 @@
         .cmd-btn:hover { background: #21262d; border-color: #58a6ff; }
         .cmd-btn.forward { grid-column: 2; }
 
+        /* Voice */
+        .mic-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 2px solid #30363d;
+            background: #161b22;
+            color: #e6edf3;
+            font-size: 26px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .mic-btn:hover { border-color: #58a6ff; }
+        .mic-btn.recording { background: #f85149; border-color: #f85149; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(248,81,73,0.4)} 50%{box-shadow:0 0 0 10px rgba(248,81,73,0)} }
+        .voice-result { font-size: 12px; color: #8b949e; margin-top: 8px; min-height: 16px; text-align: center; }
+
         /* Log */
         .log-box {
             background: #0d1117;
@@ -361,6 +381,10 @@
             <div></div>
             <button class="cmd-btn" onclick="sendCmd('MOVE_BACKWARD')">▼ Back</button>
             <div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;margin-top:16px;">
+            <button class="mic-btn" id="micBtn" onclick="toggleRecording()">🎤</button>
+            <div class="voice-result" id="voiceResult">Press to speak</div>
         </div>
     </div>
 
@@ -525,6 +549,61 @@
     }
 
     drawCompass(0);
+
+    // Voice recording
+    var mediaRecorder = null;
+    var audioChunks = [];
+
+    function toggleRecording() {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+        } else {
+            startRecording();
+        }
+    }
+
+    function startRecording() {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = function(e) {
+                audioChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = function() {
+                document.getElementById('micBtn').classList.remove('recording');
+                document.getElementById('micBtn').innerText = '🎤';
+                document.getElementById('voiceResult').innerText = 'Processing...';
+
+                var blob = new Blob(audioChunks, { type: 'audio/wav' });
+                var reader = new FileReader();
+                reader.onloadend = function() {
+                    var base64 = reader.result.split(',')[1];
+                    socket.emit('audio_received', {
+                        data: base64,
+                        byteCount: blob.size
+                    });
+                };
+                reader.readAsDataURL(blob);
+                stream.getTracks().forEach(function(t) { t.stop(); });
+            };
+
+            mediaRecorder.start();
+            document.getElementById('micBtn').classList.add('recording');
+            document.getElementById('micBtn').innerText = '⏹';
+            document.getElementById('voiceResult').innerText = 'Recording... press to stop';
+        }).catch(function(err) {
+            document.getElementById('voiceResult').innerText = 'Mic error: ' + err.message;
+        });
+    }
+
+    socket.on('speech_command_parsed', function(data) {
+        var text = data.raw_text || '';
+        var intent = data.intent || 'UNKNOWN';
+        document.getElementById('voiceResult').innerText = '"' + text + '" → ' + intent;
+        logRaw('Voice: "' + text + '" → ' + intent);
+    });
 </script>
 </body>
 </html>
