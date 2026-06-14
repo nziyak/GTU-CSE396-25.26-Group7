@@ -278,7 +278,8 @@
       <div class="decision-banner obs-fade">
         <h3>🧠 Decision Engine — <code style="font-size:.85rem;color:#f59e0b">AutonomyController</code></h3>
         <p>The robot's brain lives in <strong>autonomy_controller.py</strong> on the Raspberry Pi 5. It implements a
-          <strong>priority-based decision tree</strong> that fuses data from all three sensing modalities:</p>
+          <strong>priority-based decision tree</strong> that fuses data from all three sensing modalities:
+        </p>
         <p style="margin-top:.5rem"><strong style="color:#fb7185">Priority 1 — Obstacle Avoidance:</strong> If the front
           ultrasonic sensor reads ≤18 cm, the robot immediately turns (alternating LEFT/RIGHT) to avoid collision.<br>
           <strong style="color:#fbbf24">Priority 2 — Victim Approach:</strong> If the YOLO + CNN pipeline detects a
