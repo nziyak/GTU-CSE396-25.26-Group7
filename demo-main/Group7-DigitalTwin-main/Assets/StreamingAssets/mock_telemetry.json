@@ -1,0 +1,64 @@
+{
+  "packets": [
+    {
+      "posX": 1.0,
+      "posY": 1.0,
+      "temperature": 25.5,
+      "smokeDetected": false,
+      "victimStatus": 0,
+      "priorityLevel": 0,
+      "acousticHit": false,
+      "acousticAngle": 0.0
+    },
+    {
+      "posX": 2.0,
+      "posY": 1.5,
+      "temperature": 26.2,
+      "smokeDetected": false,
+      "victimStatus": 0,
+      "priorityLevel": 0,
+      "acousticHit": true,
+      "acousticAngle": 45.0
+    },
+    {
+      "posX": 3.0,
+      "posY": 2.0,
+      "temperature": 32.5,
+      "smokeDetected": true,
+      "victimStatus": 1,
+      "priorityLevel": 3,
+      "acousticHit": false,
+      "acousticAngle": 0.0
+    },
+    {
+      "posX": 4.0,
+      "posY": 3.0,
+      "temperature": 28.0,
+      "smokeDetected": false,
+      "victimStatus": 2,
+      "priorityLevel": 2,
+      "acousticHit": false,
+      "acousticAngle": 0.0
+    },
+    {
+      "posX": 5.0,
+      "posY": 4.0,
+      "temperature": 45.0,
+      "smokeDetected": true,
+      "victimStatus": 3,
+      "priorityLevel": 1,
+      "acousticHit": true,
+      "acousticAngle": -90.0
+    },
+    {
+      "posX": 6.0,
+      "posY": 5.0,
+      "temperature": 27.5,
+      "smokeDetected": false,
+      "victimStatus": 0,
+      "priorityLevel": 0,
+      "acousticHit": false,
+      "acousticAngle": 0.0
+    }
+  ]
+}

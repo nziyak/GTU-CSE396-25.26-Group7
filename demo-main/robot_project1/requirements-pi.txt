@@ -1,0 +1,7 @@
+flask
+flask-socketio
+opencv-python
+numpy
+ultralytics
+onnxruntime
+vosk

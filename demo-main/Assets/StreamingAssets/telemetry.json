@@ -1,0 +1,86 @@
+[
+  {
+    "timestamp_ms": 0,
+    "posX": 1.0,
+    "posY": 1.0,
+    "temperature": 24.5,
+    "smokeDetected": false,
+    "victimStatus": "NONE",
+    "isStuck": false,
+    "priorityLevel": 0,
+    "acousticHit": false,
+    "acousticAngle": 0.0
+  },
+  {
+    "timestamp_ms": 1000,
+    "posX": 2.0,
+    "posY": 1.5,
+    "temperature": 31.2,
+    "smokeDetected": false,
+    "victimStatus": "STANDING",
+    "isStuck": false,
+    "priorityLevel": 3,
+    "acousticHit": false,
+    "acousticAngle": 0.0
+  },
+  {
+    "timestamp_ms": 2500,
+    "posX": 3.5,
+    "posY": 2.5,
+    "temperature": 42.8,
+    "smokeDetected": false,
+    "victimStatus": "LYING",
+    "isStuck": false,
+    "priorityLevel": 2,
+    "acousticHit": true,
+    "acousticAngle": 35.0
+  },
+  {
+    "timestamp_ms": 4000,
+    "posX": 5.0,
+    "posY": 3.0,
+    "temperature": 55.0,
+    "smokeDetected": true,
+    "victimStatus": "TRAPPED",
+    "isStuck": false,
+    "priorityLevel": 1,
+    "acousticHit": true,
+    "acousticAngle": 62.0
+  },
+  {
+    "timestamp_ms": 6500,
+    "posX": 6.0,
+    "posY": 4.0,
+    "temperature": 58.5,
+    "smokeDetected": true,
+    "victimStatus": "TRAPPED",
+    "isStuck": true,
+    "priorityLevel": 1,
+    "acousticHit": true,
+    "acousticAngle": 78.0
+  },
+  {
+    "timestamp_ms": 9000,
+    "posX": 7.0,
+    "posY": 5.5,
+    "temperature": 47.0,
+    "smokeDetected": true,
+    "victimStatus": "LYING",
+    "isStuck": false,
+    "priorityLevel": 2,
+    "acousticHit": false,
+    "acousticAngle": 0.0
+  },
+  {
+    "timestamp_ms": 12000,
+    "posX": 8.5,
+    "posY": 6.0,
+    "temperature": 36.4,
+    "smokeDetected": false,
+    "victimStatus": "STANDING",
+    "isStuck": false,
+    "priorityLevel": 3,
+    "acousticHit": false,
+    "acousticAngle": 0.0
+  }
+]

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MOD-04 Test Client</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #log { height: 300px; overflow-y: scroll; border: 1px solid #ccc; padding: 10px; background: #f9f9f9; }
+        .btn { padding: 10px 15px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+    </style>
+    <script type="text/javascript" charset="utf-8">
+        document.addEventListener("DOMContentLoaded", function() {
+            // Connect to server (default localhost:5001)
+            var socket = io('http://localhost:5001');
+            
+            socket.on('connect', function() {
+                document.getElementById('status').innerText = 'Connected! 🟢';
+            });
+            
+            socket.on('disconnect', function() {
+                document.getElementById('status').innerText = 'Disconnected! 🔴';
+            });
+            
+            // Listen to telemetry data
+            socket.on('telemetry_update', function(data) {
+                var logDiv = document.getElementById('log');
+                var timestamp = new Date().toLocaleTimeString();
+                logDiv.innerHTML = `<b>[${timestamp}]</b> ${JSON.stringify(data)}<br>` + logDiv.innerHTML;
+            });
+            
+            // Send command on button click
+            document.getElementById('sendCmdBtn').onclick = function() {
+                var cmd = { action: 'MOVE_FORWARD', speed: 50 };
+                socket.emit('operator_command', cmd);
+                console.log("Command sent:", cmd);
+                alert("Command sent to server! Check the server terminal.");
+            };
+        });
+    </script>
+</head>
+<body>
+    <h2>MOD-04 WebSocket Test Client (Unity Simulation)</h2>
+    <p><b>Server Status:</b> <span id="status">Connecting... 🟡</span></p>
+    
+    <button id="sendCmdBtn" class="btn">Send Example Operator Override Command (FORWARD)</button>
+    
+    <hr>
+    <h3>Live Telemetry Stream:</h3>
+    <div id="log"><i>Waiting for data...</i></div>
+</body>
+</html>
