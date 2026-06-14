@@ -202,6 +202,16 @@
         </div>
       </section>
 
+      <!-- Video Showcase -->
+      <section class="obs-fade" style="margin-top:2rem; text-align:center;">
+        <span class="section-label">FULL SHOWCASE</span>
+        <h2 class="section-title">Project Demo Video</h2>
+        <p class="section-desc" style="margin: 0.5rem auto 0; text-align:center;">Watch the autonomous rescue robot in action.</p>
+        <div class="video-container">
+          <iframe src="https://www.youtube.com/embed/pukPrtGTnvk" title="FireBot G7 Demo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </section>
+
       <!-- Stats -->
       <div class="stats-grid obs-fade">
         <div class="stat-card">
@@ -347,26 +357,26 @@
         <h2 class="section-title">How It Works</h2>
         <div class="glass-card" style="padding:1.5rem;margin-top:1rem">
           <div class="code-block" style="font-size:.72rem;line-height:1.5">
-            [Unity Digital Twin] ⟵──── WebSocket (JSON Telemetry + Video) ────⟶ [Web Dashboard (Flask)]
-            │ │
-            (PTT Audio) (Python Function Calls)
-            │ │
-            ▼ ▼
-            [Vision Pipeline] ⟵──── Pause/Resume Interrupts ────⟶ [AutonomyController 🧠]
-            (YOLOv8 + CNN) (Decision Engine)
-            │ │
-            (Pi Camera V3) (UART USB Commands)
-            │ │
-            └─────────────────────── Raspberry Pi 5 ─────────────────────┘
-            │
-            USB Serial (115200 baud)
-            │
-            ▼
-            [Arduino Mega 2560]
-            ┌──────────┼──────────┐
-            (PWM) (ADC) (I2C)
-            L298N Motors Mics/MQ2 MPU6050
-            HC-SR04 ×2 DHT11
+[Unity Digital Twin]  ⟵──── WebSocket (JSON Telemetry + Video) ────⟶  [Web Dashboard (Flask)]
+       │                                                                        │
+  (PTT Audio)                                                         (Python Function Calls)
+       │                                                                        │
+       ▼                                                                        ▼
+[Vision Pipeline]  ⟵──── Pause/Resume Interrupts ────⟶  [AutonomyController 🧠]
+  (YOLOv8 + CNN)                                              (Decision Engine)
+       │                                                            │
+  (Pi Camera V3)                                           (UART USB Commands)
+       │                                                            │
+       └─────────────────────── Raspberry Pi 5 ─────────────────────┘
+                                      │
+                            USB Serial (115200 baud)
+                                      │
+                                      ▼
+                          [Arduino Mega 2560]
+                    ┌──────────┼──────────┐
+                  (PWM)      (ADC)      (I2C)
+               L298N Motors  Mics/MQ2  MPU6050
+               HC-SR04 ×2    DHT11
           </div>
         </div>
       </section>
