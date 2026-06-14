@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Manual — FireBot G7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="layout">
+<!-- Top Navbar -->
+<header class="top-navbar">
+  <div class="navbar-container">
+    <div class="navbar-logo">
+      <span class="brand">FireBot</span>
+      <span class="badge">G7</span>
+    </div>
+    <button class="hamburger" aria-label="Menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <nav class="navbar-nav">
+      <a href="index.html" class="nav-link" data-nav="home">Home</a>
+      <a href="technical.html" class="nav-link" data-nav="technical">Technical</a>
+      <a href="modules.html" class="nav-link" data-nav="modules">Modules</a>
+      <a href="team.html" class="nav-link" data-nav="team">Team</a>
+      <a href="manual.html" class="nav-link" data-nav="manual">User Manual</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="main">
+
+<!-- Installation -->
+<section class="obs-fade">
+  <span class="section-label">USER MANUAL</span>
+  <h2 class="section-title">Installation &amp; Setup Guide</h2>
+
+  <div class="alert alert-danger" style="margin-top:1rem">
+    <strong>⚠️ SAFETY WARNING:</strong> This robot operates with 12V motor power and high-current actuators. Always disconnect the motor battery before modifying wiring. Ensure all common grounds are connected before powering the system. Never power the MPU6050 from 5V — it is NOT 5V tolerant.
+  </div>
+
+  <h3 style="font-size:1rem;font-weight:700;color:#fff;margin-top:2rem">1. Arduino Mega Firmware Upload</h3>
+  <ol class="step-list" style="margin-top:.75rem">
+    <li>Install <strong>Arduino IDE 2.x</strong> (or later) from arduino.cc</li>
+    <li>Install required libraries via <em>Sketch → Include Library → Manage Libraries</em>:
+      <div style="margin-top:.5rem"><code>MPU6050_light</code> by rfetick, <code>DHT sensor library</code> by Adafruit, <code>Adafruit Unified Sensor</code></div>
+    </li>
+    <li>Connect Arduino Mega 2560 to your computer via USB</li>
+    <li>Select: <em>Tools → Board → Arduino AVR Boards → Arduino Mega or Mega 2560</em><br>
+      <em>Tools → Processor → ATmega2560 (Mega 2560)</em><br>
+      <em>Tools → Port → (select the correct COM port)</em></li>
+    <li>Open or paste the firmware code, click <strong>Upload ⬆️</strong></li>
+    <li>After upload completes, disconnect Mega from PC and connect to Raspberry Pi's USB port</li>
+  </ol>
+
+  <h3 style="font-size:1rem;font-weight:700;color:#fff;margin-top:2rem">2. Raspberry Pi 5 Environment</h3>
+  <div class="code-block" style="margin-top:.75rem">
+<span class="cm"># Update system</span>
+sudo apt update && sudo apt upgrade -y
+
+<span class="cm"># Install Python dependencies</span>
+pip install flask flask-socketio pyserial ultralytics opencv-python-headless
+pip install onnxruntime picamera2
+
+<span class="cm"># Install Vosk (offline STT)</span>
+pip install vosk
+<span class="cm"># Download vosk-model-small-en-us-0.15 and place in vosk-model/</span>
+
+<span class="cm"># Clone the project repository</span>
+git clone &lt;repo-url&gt; && cd robot_project1
+  </div>
+
+  <h3 style="font-size:1rem;font-weight:700;color:#fff;margin-top:2rem">3. Hardware Wiring Checklist</h3>
+  <ol class="step-list" style="margin-top:.75rem">
+    <li>Connect L298N motor driver: ENA→Pin5, IN1→22, IN2→23, IN3→24, IN4→25, ENB→Pin6</li>
+    <li>Connect HC-SR04 front: TRIG→9, ECHO→10 (VCC→5V). Back: TRIG→7, ECHO→8</li>
+    <li>Connect MAX4466 mics to A0 and A1 (VCC→3.3V)</li>
+    <li>Connect MQ-2 smoke sensor to A2 (VCC→5V, allow 20s warm-up)</li>
+    <li>Connect DHT11 to Pin 4 (VCC→5V)</li>
+    <li>Connect MPU6050: SDA→20, SCL→21 (VCC→<strong>3.3V only!</strong>)</li>
+    <li>Connect motor battery (12V recommended) to L298N VS terminal</li>
+    <li><strong>Critical:</strong> Tie L298N GND + Mega GND + Battery GND together (common ground)</li>
+  </ol>
+</section>
+
+<!-- Startup -->
+<section class="obs-fade" style="margin-top:3rem">
+  <span class="section-label">OPERATION</span>
+  <h2 class="section-title">System Startup Procedure</h2>
+
+  <h3 style="font-size:1rem;font-weight:700;color:#fff;margin-top:1rem">Pre-Flight Checklist</h3>
+  <ol class="step-list" style="margin-top:.75rem">
+    <li>Verify motor battery voltage is 9-12V (12V recommended — 9V may be insufficient)</li>
+    <li>Confirm all ground connections are tied (common GND topology)</li>
+    <li>Ensure the Arduino Mega USB cable is connected to Pi 5</li>
+    <li>Verify Pi Camera V3 ribbon cable is seated properly in CSI port</li>
+    <li>Confirm YOLOv8 model (<code>yolov8n.pt</code>) and ONNX model (<code>severity_model.onnx</code>) exist in the project directory</li>
+  </ol>
+
+  <h3 style="font-size:1rem;font-weight:700;color:#fff;margin-top:2rem">Starting the System</h3>
+  <div class="code-block" style="margin-top:.75rem">
+<span class="cm"># Step 1: SSH into the Pi 5 or open terminal</span>
+ssh pi@firebot.local
+
+<span class="cm"># Step 2: Navigate to project directory</span>
+cd robot_project1
+
+<span class="cm"># Step 3: Start the integrated system</span>
+python3 pi_main.py
+
+<span class="cm"># Expected output:</span>
+<span class="cm"># [INFO] pi_main: Vision init successful</span>
+<span class="cm"># [WebDashboard] Starting server on 0.0.0.0:5001 ...</span>
+<span class="cm"># [INFO] pi_main: STM front=45 back=80 mic1=340 ...</span>
+  </div>
+
+  <h3 style="font-size:1rem;font-weight:700;color:#fff;margin-top:2rem">Connecting Unity Digital Twin</h3>
+  <ol class="step-list" style="margin-top:.75rem">
+    <li>Open the Unity project and enter Play mode</li>
+    <li>Set the WebSocket URL to <code>ws://&lt;Pi-IP&gt;:5001</code></li>
+    <li>The HUD should start showing live telemetry data within 2 seconds</li>
+    <li>Use the operator controls to send manual commands (FORWARD, LEFT, etc.)</li>
+    <li>For demo mode: Use <code>FileNetworkClient</code> with mock JSON data</li>
+  </ol>
+
+  <h3 style="font-size:1rem;font-weight:700;color:#fff;margin-top:2rem">Manual Motor Test (Python)</h3>
+  <div class="code-block" style="margin-top:.75rem">
+<span class="kw">import</span> serial, time
+ser = serial.Serial(<span class="str">'/dev/ttyUSB0'</span>, <span class="num">115200</span>, timeout=<span class="num">1</span>)
+time.sleep(<span class="num">2</span>)  <span class="cm"># Wait for Mega reset</span>
+
+ser.write(b<span class="str">"FORWARD\n"</span>)
+time.sleep(<span class="num">3</span>)
+
+ser.write(b<span class="str">"RIGHT\n"</span>)
+time.sleep(<span class="num">3</span>)
+
+ser.write(b<span class="str">"STOP\n"</span>)
+  </div>
+</section>
+
+<!-- Troubleshooting -->
+<section class="obs-fade" style="margin-top:3rem">
+  <span class="section-label">TROUBLESHOOTING</span>
+  <h2 class="section-title">Common Issues &amp; Solutions</h2>
+  <div style="margin-top:1rem">
+    <div class="trouble-item">
+      <h4>🔴 Motors don't move / run at very low power</h4>
+      <p><span class="remedy">✅ Remedy:</span> Check battery voltage — 9V may be insufficient for L298N. Use 12V. Verify ENA/ENB jumpers are removed and PWM pins (5, 6) are connected. Check common ground between battery, L298N, and Mega.</p>
+    </div>
+    <div class="trouble-item">
+      <h4>🔴 "Serial port not found" on Pi</h4>
+      <p><span class="remedy">✅ Remedy:</span> Run <code>ls /dev/ttyUSB*</code> or <code>ls /dev/ttyACM*</code>. Update the port in <code>pi_main.py</code>. Add user to dialout group: <code>sudo usermod -aG dialout $USER</code></p>
+    </div>
+    <div class="trouble-item">
+      <h4>🔴 MPU6050 readings are all zeros</h4>
+      <p><span class="remedy">✅ Remedy:</span> Verify SDA→20 and SCL→21 are not swapped (this happened during our development). Ensure VCC is connected to 3.3V, NOT 5V. Run an I2C scan: address should be 0x68.</p>
+    </div>
+    <div class="trouble-item">
+      <h4>🔴 Vision pipeline crashes with OOM</h4>
+      <p><span class="remedy">✅ Remedy:</span> The Pi 5 has limited RAM. STT processing and vision should not run simultaneously — the system automatically pauses vision during audio processing. Reduce <code>exploration_fps</code> from 5 to 3 if needed.</p>
+    </div>
+    <div class="trouble-item">
+      <h4>🔴 DHT11 returns NaN values</h4>
+      <p><span class="remedy">✅ Remedy:</span> DHT11 requires 1-2 seconds between reads. The firmware handles this in the 300ms telemetry cycle. Check the data pin (4) connection. Note: we confirmed the sensor is DHT11 (not DHT22) — the code uses <code>DHT11</code> type constant.</p>
+    </div>
+    <div class="trouble-item">
+      <h4>🔴 "Bad UART JSON" warnings flooding the log</h4>
+      <p><span class="remedy">✅ Remedy:</span> This occurs when the Mega's serial output gets corrupted (often during motor startup noise). The system automatically retries. Ensure grounds are properly connected to minimize electrical noise. Float formatting uses <code>Serial.print(val, 1)</code> because AVR doesn't support <code>snprintf %f</code>.</p>
+    </div>
+    <div class="trouble-item">
+      <h4>🔴 Ultrasonic readings are unreliable when MPU is active</h4>
+      <p><span class="remedy">✅ Remedy:</span> The MPU6050 I2C communication interferes with <code>pulseIn()</code> timing. The firmware reads MPU first, then performs ultrasonic measurements. A 10ms delay between front/back readings also helps.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Edge Cases -->
+<section class="obs-fade" style="margin-top:3rem">
+  <span class="section-label">EDGE CASES</span>
+  <h2 class="section-title">Design Notes &amp; Known Constraints</h2>
+  <div style="margin-top:1rem">
+    <div class="alert alert-warn">
+      <strong>STM32 → Arduino Mega Migration:</strong> The original hardware design used an STM32F103C6 (Blue Pill). The ST-Link SWD pins were electrically damaged, making the MCU unprogrammable. The system was migrated to Arduino Mega 2560 before the demo. All firmware logic was ported from STM32 HAL/LL to Arduino Wiring framework. The sensor and motor connections remain identical.
+    </div>
+    <div class="alert alert-info" style="margin-top:.75rem">
+      <strong>2-Second Timed Commands:</strong> Each motor command executes for exactly 2 seconds then auto-stops. This is a safety feature — if communication is lost, the robot will stop automatically rather than continuing to move. The AutonomyController re-issues commands at 250ms intervals to maintain continuous motion.
+    </div>
+    <div class="alert alert-info" style="margin-top:.75rem">
+      <strong>Thermal Management:</strong> The Pi 5 Active Cooler is essential. YOLOv8 + ONNX inference generates significant heat. Without active cooling, the Pi 5 will thermal-throttle and vision FPS will drop below 2 FPS, making victim detection unreliable.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div><p>&copy; 2026 Group 7 — CSE 396</p></div>
+  <nav><a href="index.html">Home</a><a href="technical.html">Technical</a><a href="modules.html">Modules</a><a href="team.html">Team</a><a href="manual.html">Manual</a></nav>
+</footer>
+</main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

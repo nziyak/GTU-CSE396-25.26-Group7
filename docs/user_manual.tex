@@ -1,0 +1,377 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage[T1]{fontenc}
+
+% Design Tokens
+\definecolor{fireamber}{HTML}{f59e0b}
+\definecolor{firecyan}{HTML}{06b6d4}
+\definecolor{firerose}{HTML}{f43f5e}
+\definecolor{codegray}{rgb}{0.45,0.45,0.45}
+\definecolor{codeblue}{rgb}{0.1,0.2,0.6}
+\definecolor{codeback}{rgb}{0.97,0.97,0.99}
+
+\lstdefinestyle{pythonstyle}{
+    backgroundcolor=\color{codeback},
+    commentstyle=\color{codegray}\itshape,
+    keywordstyle=\color{codeblue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{firecyan},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=8pt,
+    showstringspaces=false,
+    tabsize=4,
+    frame=tb,
+    rulecolor=\color{lightgray},
+    language=Python
+}
+
+\lstdefinestyle{cstyle}{
+    backgroundcolor=\color{codeback},
+    commentstyle=\color{codegray}\itshape,
+    keywordstyle=\color{codeblue}\bfseries,
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    captionpos=b,
+    numbers=left,
+    numbersep=8pt,
+    showstringspaces=false,
+    tabsize=4,
+    frame=tb,
+    rulecolor=\color{lightgray},
+    language=C++
+}
+\lstset{style=pythonstyle}
+
+\newenvironment{important}[1][IMPORTANT]{%
+    \medskip\noindent\color{firerose}\textbf{#1:}\color{black}\ \begin{itshape}%
+}{\end{itshape}\medskip}
+
+\newenvironment{warning}[1][WARNING]{%
+    \medskip\noindent\color{fireamber}\textbf{#1:}\color{black}\ \begin{itshape}%
+}{\end{itshape}\medskip}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Group 7 -- Autonomous Fire \& Rescue Robot}
+\lhead{User Manual \& Technical Specs}
+\rfoot{Page \thepage}
+\lfoot{Version 1.0 -- June 2026}
+
+\title{\textbf{Autonomous First Responder\\Fire \& Rescue Robot\\User Manual \& Technical Documentation}\\\vspace{0.5em}\large CSE 396 -- Computer Engineering Project\\\large Gebze Technical University -- Group 7}
+\author{
+  \textbf{Nuri Ziya Kırtepe} (210104004027) \\
+  \textbf{Ömer Nacar} (210104004814) \\
+  \textbf{Tuana Melisa Aksoy} (230104004903) \\
+  \textbf{Evrim Doğa Solmaz} (230104004042) \\
+  \textbf{Uğur Anıl Güney} (210104004011) \\
+  \textbf{Dicle Çoban} (220104004088) \\
+  \textbf{Fatma Öztürk} (230104004152) \\
+  \textbf{Gabil Rahimli} (230104004902)
+}
+\date{June 2026 \\ \vspace{1.5em} \textbf{Project Repository:} \url{https://github.com/nziyak/GTU-CSE396-25.26-Group7} \\ \textbf{Live Documentation:} \url{https://nziyak.github.io/GTU-CSE396-25.26-Group7/}}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This document is the official User Manual and Technical Specification for the \textit{Autonomous First Responder Fire \& Rescue Robot}, designed and built by Group 7 for the CSE 396 Computer Engineering Project course. The system is an Edge-AI driven autonomous robot that enters disaster zones, detects victims using Tri-Modal Sensor Fusion (Visual, Acoustic, Environmental), classifies victim severity using a two-stage neural pipeline (YOLOv8 + CNN), and provides real-time telemetry to a Unity Digital Twin operator interface. The hardware layer uses an Arduino Mega 2560 (migrated from STM32F103C6 due to SWD pin damage) for motor control and sensor acquisition, while a Raspberry Pi 5 handles all AI inference, communication, and decision-making. This document provides complete hardware pinouts, communication protocol definitions, installation procedures, operational guides, and troubleshooting references.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+% =================================================================
+\section{Introduction}
+\subsection{Project Scope}
+In urban fire and earthquake scenarios, first responders face life-threatening conditions when searching for trapped victims in collapsed or smoke-filled structures. The \textit{Autonomous First Responder Fire \& Rescue Robot} is designed to enter hazardous zones before human firefighters, autonomously mapping the environment and locating victims using a tri-modal sensing approach:
+
+\begin{enumerate}
+    \item \textbf{Visual Detection:} YOLOv8 human detection + custom CNN severity classification (TRAPPED / LYING / STANDING)
+    \item \textbf{Acoustic Localization:} Dual-microphone bearing estimation for distress call homing
+    \item \textbf{Environmental Monitoring:} Temperature, humidity, smoke/gas concentration tracking
+\end{enumerate}
+
+All processing runs locally on the Raspberry Pi 5 with zero cloud dependency.
+
+\subsection{Hardware Change Notice}
+\begin{important}
+The original hardware design used an STM32F103C6 (Blue Pill) microcontroller. Due to electrical damage to the SWD (Serial Wire Debug) programming pins, the STM32 became unprogrammable. The system was migrated to an \textbf{Arduino Mega 2560} before the project demo. All sensor connections and motor control logic remain identical; only the MCU, pin assignments, and firmware framework changed (STM32 HAL $\rightarrow$ Arduino Wiring).
+\end{important}
+
+% =================================================================
+\section{Hardware Architecture}
+
+\subsection{Processing Nodes}
+\begin{table}[h]
+\centering
+\caption{System Processing Nodes}
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Node} & \textbf{Hardware} & \textbf{Role} \\
+\midrule
+Edge AI Computer & Raspberry Pi 5 (8GB RAM) + Active Cooler & AI inference, decision engine, dashboard \\
+Sensor Controller & Arduino Mega 2560 (ATmega2560, 16MHz) & Motor control, sensor acquisition \\
+Previous MCU & STM32F103C6 (Blue Pill) & Replaced -- SWD pin damage \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Sensor Pin Assignments (Arduino Mega 2560)}
+
+\begin{table}[h]
+\centering
+\caption{Sensor Pin Mapping}
+\label{tab:sensor-pins}
+\begin{tabularx}{\textwidth}{l l l X}
+\toprule
+\textbf{Sensor} & \textbf{Pin(s)} & \textbf{VCC} & \textbf{Type} \\
+\midrule
+HC-SR04 Front Distance & TRIG: 9, ECHO: 10 & 5V & Digital \\
+HC-SR04 Back Distance & TRIG: 7, ECHO: 8 & 5V & Digital \\
+MAX4466 Microphone 1 & A0 & 3.3V & Analog (ADC) \\
+MAX4466 Microphone 2 & A1 & 3.3V & Analog (ADC) \\
+MQ-2 Smoke Sensor & A2 & 5V & Analog (ADC) \\
+DHT11 Temp/Humidity & Pin 4 & 5V & Digital (1-Wire) \\
+MPU6050 IMU & SDA: 20, SCL: 21 & 3.3V & I2C \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{Motor Driver (L298N) Pin Mapping}
+\label{tab:motor-pins}
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{L298N Pin} & \textbf{Mega Pin} & \textbf{Function} \\
+\midrule
+ENA & Pin 5 (PWM) & Left motor speed control \\
+IN1 & Pin 22 & Left motor direction 1 \\
+IN2 & Pin 23 & Left motor direction 2 \\
+IN3 & Pin 24 & Right motor direction 1 \\
+IN4 & Pin 25 & Right motor direction 2 \\
+ENB & Pin 6 (PWM) & Right motor speed control \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Power Architecture}
+\begin{itemize}
+    \item \textbf{Raspberry Pi 5:} Dedicated USB-C PD powerbank
+    \item \textbf{Motor \& Sensor Power:} A separate powerbank feeds a decoy trigger cable to provide a stable 12V output. This 12V rail powers the L298N motor driver, sensors, and the Arduino Mega.
+    \item \textbf{Ground Policy:} All GND rails (12V decoy, L298N, Mega, Pi) must be tied together (star topology) to ensure stable signal references.
+\end{itemize}
+
+\begin{important}
+The MPU6050 is NOT 5V tolerant. Its VCC must be connected to the Mega's 3.3V pin, not 5V.
+\end{important}
+
+% =================================================================
+\section{Communication Protocol}
+
+\subsection{Serial Link Configuration}
+Communication between the Raspberry Pi 5 and Arduino Mega operates over USB Serial:
+\begin{itemize}
+    \item \textbf{Port:} \texttt{/dev/ttyUSB0}
+    \item \textbf{Baud Rate:} 115200 bps
+    \item \textbf{Data Format:} 8N1 (8 data bits, no parity, 1 stop bit)
+\end{itemize}
+
+\subsection{Command Packets (Pi $\rightarrow$ Mega)}
+ASCII commands terminated by \texttt{\textbackslash n}. Each command triggers 2-second timed motor execution.
+
+\begin{table}[h]
+\centering
+\caption{Command Set}
+\begin{tabularx}{\textwidth}{l X}
+\toprule
+\textbf{Command} & \textbf{Behavior} \\
+\midrule
+\texttt{FORWARD\textbackslash n} & Move forward for 2 seconds \\
+\texttt{BACKWARD\textbackslash n} & Move backward for 2 seconds \\
+\texttt{LEFT\textbackslash n} & Tank-turn left for 2 seconds \\
+\texttt{RIGHT\textbackslash n} & Tank-turn right for 2 seconds \\
+\texttt{STOP\textbackslash n} & Immediate stop \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Telemetry Packets (Mega $\rightarrow$ Pi)}
+Every 300ms, the Mega transmits a JSON object:
+\begin{verbatim}
+{"dist_front":45,"dist_back":80,"mic1":340,"mic2":335,
+ "smoke":420,"yaw":1.2,"pitch":-0.5,"roll":0.3,
+ "temp":24.5,"hum":45.0,"connected":true}
+\end{verbatim}
+
+\begin{table}[h]
+\centering
+\caption{Telemetry JSON Fields}
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Field} & \textbf{Type} & \textbf{Description} \\
+\midrule
+dist\_front / dist\_back & int & Ultrasonic distance (cm) \\
+mic1 / mic2 & int & Microphone analog values (0--1023) \\
+smoke & int & MQ-2 smoke sensor raw value (0--1023) \\
+yaw / pitch / roll & float & MPU6050 orientation (degrees) \\
+temp / hum & float & DHT11 temperature (\textdegree C) / humidity (\%) \\
+connected & bool & Mega connection alive flag \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% =================================================================
+\section{Software Architecture}
+
+\subsection{Decision Engine --- AutonomyController}
+The central decision module (\texttt{autonomy\_controller.py}) implements a priority-based decision tree that fuses multi-modal sensor data:
+
+\begin{enumerate}
+    \item \textbf{Priority 1 --- Obstacle Avoidance:} If \texttt{dist\_front} $\leq$ 18 cm, the robot immediately executes an alternating LEFT/RIGHT turn to avoid collision.
+    \item \textbf{Priority 2 --- Victim Approach:} If YOLOv8 + CNN detects a TRAPPED or LYING victim, the controller steers the robot toward the target by comparing bounding box center against frame center ($\pm$70px tolerance). The robot stops when estimated distance $\leq$ 60 cm.
+    \item \textbf{Priority 3 --- Autonomous Patrol:} When no obstacle or victim is detected, the robot moves FORWARD in patrol mode.
+\end{enumerate}
+
+The decision cycle runs at 4 Hz (250ms intervals). Each decision generates a motor command sent to the Mega via UART.
+
+\subsection{Two-Stage Vision Pipeline}
+\begin{enumerate}
+    \item \textbf{Stage 1 --- YOLOv8n:} Detects humans in Pi Camera V3 frames (640$\times$480). Selects the best candidate by $\text{confidence} \times \text{bbox area}$.
+    \item \textbf{Stage 2 --- Custom CNN (ONNX):} Crops the detected person, resizes to 160$\times$160, and classifies severity: TRAPPED, LYING, or STANDING. Uses a 2-second sliding window for stable predictions.
+\end{enumerate}
+
+\subsection{Key Software Modules}
+\begin{itemize}
+    \item \texttt{pi\_main.py} --- System integration and main loop
+    \item \texttt{autonomy\_controller.py} --- Decision engine
+    \item \texttt{ai\_vision.py} --- Two-stage vision pipeline
+    \item \texttt{uart\_reader.py} --- Serial telemetry reader/writer
+    \item \texttt{comms\_dashboard.py} --- Flask/SocketIO web dashboard
+    \item \texttt{stt\_engine.py} --- Offline Vosk speech-to-text
+    \item \texttt{acoustic\_homing.py} --- Acoustic source localization
+\end{itemize}
+
+% =================================================================
+\section{Installation and Setup}
+
+\subsection{Arduino Mega Firmware Upload}
+\begin{enumerate}
+    \item Install Arduino IDE 2.x from \url{https://www.arduino.cc}
+    \item Install required libraries via \textit{Sketch $\rightarrow$ Include Library $\rightarrow$ Manage Libraries}:
+    \begin{itemize}
+        \item \texttt{MPU6050\_light} by rfetick
+        \item \texttt{DHT sensor library} by Adafruit
+        \item \texttt{Adafruit Unified Sensor}
+    \end{itemize}
+    \item Select board: \textit{Tools $\rightarrow$ Board $\rightarrow$ Arduino Mega or Mega 2560}
+    \item Select processor: \textit{ATmega2560 (Mega 2560)}
+    \item Select port and click \textbf{Upload}
+    \item After upload, disconnect from PC and connect to Pi 5 USB port
+\end{enumerate}
+
+\subsection{Raspberry Pi 5 Environment}
+\begin{verbatim}
+# System update
+sudo apt update && sudo apt upgrade -y
+
+# Python dependencies
+pip install flask flask-socketio pyserial ultralytics
+pip install opencv-python-headless onnxruntime picamera2 vosk
+
+# Clone repository
+git clone <repo-url> && cd robot_project1
+\end{verbatim}
+
+\subsection{Hardware Wiring Checklist}
+\begin{enumerate}
+    \item Connect L298N: ENA$\rightarrow$Pin5, IN1$\rightarrow$22, IN2$\rightarrow$23, IN3$\rightarrow$24, IN4$\rightarrow$25, ENB$\rightarrow$Pin6
+    \item Connect HC-SR04 front: TRIG$\rightarrow$9, ECHO$\rightarrow$10. Back: TRIG$\rightarrow$7, ECHO$\rightarrow$8
+    \item Connect MAX4466 microphones to A0, A1 (VCC$\rightarrow$3.3V)
+    \item Connect MQ-2 to A2 (VCC$\rightarrow$5V)
+    \item Connect DHT11 to Pin 4 (VCC$\rightarrow$5V)
+    \item Connect MPU6050: SDA$\rightarrow$20, SCL$\rightarrow$21 (VCC$\rightarrow$\textbf{3.3V only!})
+    \item Tie all GND rails together (common ground)
+\end{enumerate}
+
+% =================================================================
+\section{Operational Procedures}
+
+\subsection{Startup Checklist}
+\begin{enumerate}
+    \item Verify motor battery is 12V (9V is insufficient for L298N)
+    \item Confirm all ground connections are tied
+    \item Ensure Mega USB cable is connected to Pi 5
+    \item Verify Pi Camera V3 ribbon cable is seated in CSI port
+    \item Confirm \texttt{yolov8n.pt} and \texttt{severity\_model.onnx} exist in project directory
+\end{enumerate}
+
+\subsection{Starting the System}
+\begin{verbatim}
+# SSH into Pi 5
+ssh pi@firebot.local
+
+# Navigate to project
+cd robot_project1
+
+# Launch
+python3 pi_main.py
+\end{verbatim}
+
+Expected output:
+\begin{verbatim}
+[INFO] pi_main: Vision init successful
+[WebDashboard] Starting server on 0.0.0.0:5001 ...
+[INFO] pi_main: STM front=45 back=80 mic1=340 ...
+\end{verbatim}
+
+\subsection{Unity Digital Twin Connection}
+\begin{enumerate}
+    \item Open Unity project and enter Play mode
+    \item Set WebSocket URL to \texttt{ws://<Pi-IP>:5001}
+    \item HUD should display live telemetry within 2 seconds
+    \item Use operator controls for manual commands
+\end{enumerate}
+
+% =================================================================
+\section{Troubleshooting}
+
+\begin{itemize}
+    \item \textbf{Motors don't move:} Check battery voltage (use 12V). Verify ENA/ENB PWM pins. Check common ground.
+    \item \textbf{Serial port not found:} Run \texttt{ls /dev/ttyUSB*}. Add user to dialout group.
+    \item \textbf{MPU6050 reads zeros:} Verify SDA/SCL not swapped. Confirm VCC=3.3V.
+    \item \textbf{Vision OOM crash:} STT pauses vision automatically. Reduce \texttt{exploration\_fps} if needed.
+    \item \textbf{DHT11 returns NaN:} Normal during warm-up. Firmware handles gracefully.
+    \item \textbf{Bad UART JSON:} Motor noise causes occasional corruption. System retries automatically.
+    \item \textbf{Ultrasonic unreliable:} MPU I2C conflicts with \texttt{pulseIn()}. Firmware sequences reads correctly.
+\end{itemize}
+
+% =================================================================
+\section{Design Notes and Known Constraints}
+
+\begin{enumerate}
+    \item \textbf{2-Second Timed Commands:} Safety feature --- if communication is lost, robot auto-stops after 2 seconds. The AutonomyController re-issues commands at 250ms to maintain motion.
+    \item \textbf{Thermal Management:} Pi 5 Active Cooler is essential. Without it, YOLO inference causes thermal throttling and FPS drops below 2.
+    \item \textbf{AVR Float Limitation:} Arduino AVR architecture does not support \texttt{snprintf \%f}. Float values are output via \texttt{Serial.print(value, 1)}.
+    \item \textbf{Vision-STT Mutex:} Vision pipeline pauses during STT processing to prevent OOM on Pi 5's limited RAM.
+    \item \textbf{DHT11 vs DHT22:} The sensor was confirmed as DHT11 (not DHT22 as originally planned). Code uses \texttt{DHT11} type constant.
+\end{enumerate}
+
+\end{document}

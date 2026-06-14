@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Technical Architecture — Hardware specs, pin mapping, communication protocol, and code explorer.">
+  <title>Technical — FireBot G7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="layout">
+<!-- Top Navbar -->
+<header class="top-navbar">
+  <div class="navbar-container">
+    <div class="navbar-logo">
+      <span class="brand">FireBot</span>
+      <span class="badge">G7</span>
+    </div>
+    <button class="hamburger" aria-label="Menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <nav class="navbar-nav">
+      <a href="index.html" class="nav-link" data-nav="home">Home</a>
+      <a href="technical.html" class="nav-link" data-nav="technical">Technical</a>
+      <a href="modules.html" class="nav-link" data-nav="modules">Modules</a>
+      <a href="team.html" class="nav-link" data-nav="team">Team</a>
+      <a href="manual.html" class="nav-link" data-nav="manual">User Manual</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="main">
+
+<!-- Platform Summary -->
+<section class="obs-fade">
+  <span class="section-label">PLATFORM OVERVIEW</span>
+  <h2 class="section-title">Technical Specifications</h2>
+  <p class="section-desc">Cross-reference hardware parameters and the software stack powering the rescue robot.</p>
+
+  <div class="glass-card" style="padding:1.5rem;margin-top:1.5rem">
+    <div class="tabs" data-tab-group="specs">
+      <button class="tab-btn active" data-tab="panel-hw">Hardware Manifest</button>
+      <button class="tab-btn" data-tab="panel-sw">Software Stack</button>
+    </div>
+    <div id="panel-hw" class="tab-panel active">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem">
+        <div>
+          <h3 style="font-size:.9rem;font-weight:700;color:#fff;margin-bottom:.75rem">🖥️ Processing Nodes</h3>
+          <ul class="spec-list">
+            <li><span>Edge AI Computer</span><span>Raspberry Pi 5 (8GB RAM) + Active Cooler</span></li>
+            <li><span>Sensor Controller</span><span>Arduino Mega 2560 (ATmega2560, 16MHz)</span></li>
+            <li><span>Previous MCU</span><span>STM32F103C6 — replaced due to SWD pin damage</span></li>
+            <li><span>Inter-Device Link</span><span>USB Serial (/dev/ttyUSB0, 115200 baud)</span></li>
+          </ul>
+          <h3 style="font-size:.9rem;font-weight:700;color:#fff;margin:1.25rem 0 .75rem">🎥 Vision &amp; Sensors</h3>
+          <ul class="spec-list">
+            <li><span>Camera</span><span>Pi Camera Module V3 (Sony IMX708)</span></li>
+            <li><span>Ultrasonic</span><span>HC-SR04 ×2 (Front + Back)</span></li>
+            <li><span>Microphones</span><span>MAX4466 ×2 (Analog Electret)</span></li>
+            <li><span>IMU</span><span>MPU6050 (I2C — Yaw/Pitch/Roll)</span></li>
+            <li><span>Temperature</span><span>DHT11 (Temp + Humidity)</span></li>
+            <li><span>Smoke/Gas</span><span>MQ-2 (Analog — 5V heater)</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:.9rem;font-weight:700;color:#fff;margin-bottom:.75rem">⚙️ Mobility</h3>
+          <ul class="spec-list">
+            <li><span>Motor Driver</span><span>L298N H-Bridge (Dual Channel)</span></li>
+            <li><span>Motors</span><span>4WD DC Motors (2 groups: Left + Right)</span></li>
+            <li><span>Control Method</span><span>PWM speed (Pin 5/6) + DIR (Pin 22-25)</span></li>
+            <li><span>Command Mode</span><span>2-second timed execution per command</span></li>
+          </ul>
+          <h3 style="font-size:.9rem;font-weight:700;color:#fff;margin:1.25rem 0 .75rem">⚡ Power</h3>
+          <ul class="spec-list">
+            <li><span>Pi 5 Power</span><span>USB-C 27W PSU or PD Powerbank</span></li>
+            <li><span>Motor Power</span><span>9-12V External Battery (12V recommended)</span></li>
+            <li><span>Arduino</span><span>USB from Pi 5 or external 7-12V</span></li>
+            <li><span>Ground Policy</span><span>Common GND (star topology)</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div id="panel-sw" class="tab-panel">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem">
+        <div>
+          <h3 style="font-size:.9rem;font-weight:700;color:#fff;margin-bottom:.75rem">🤖 AI Pipeline</h3>
+          <ul class="spec-list">
+            <li><span>Human Detection</span><span>Ultralytics YOLOv8n (PyTorch)</span></li>
+            <li><span>Severity Classifier</span><span>Custom CNN via ONNX Runtime</span></li>
+            <li><span>Speech-to-Text</span><span>Vosk (Offline STT on Pi 5)</span></li>
+            <li><span>Classes</span><span>TRAPPED / LYING / STANDING</span></li>
+          </ul>
+          <h3 style="font-size:.9rem;font-weight:700;color:#fff;margin:1.25rem 0 .75rem">🌐 Communication</h3>
+          <ul class="spec-list">
+            <li><span>Web Backend</span><span>Flask + Flask-SocketIO (Python)</span></li>
+            <li><span>Video Stream</span><span>Base64 JPEG over WebSocket</span></li>
+            <li><span>Telemetry Format</span><span>JSON (AugmentedStatusReport)</span></li>
+            <li><span>UART Protocol</span><span>JSON (Mega→Pi) / ASCII commands (Pi→Mega)</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3 style="font-size:.9rem;font-weight:700;color:#fff;margin-bottom:.75rem">🎮 Operator Interface</h3>
+          <ul class="spec-list">
+            <li><span>Digital Twin</span><span>Unity Engine (C#)</span></li>
+            <li><span>Network Client</span><span>ClientWebSocket + Socket.IO</span></li>
+            <li><span>Features</span><span>Map, HUD, PTT Audio, Victim Pins</span></li>
+            <li><span>Demo Mode</span><span>FileNetworkClient (Mock JSON)</span></li>
+          </ul>
+          <h3 style="font-size:.9rem;font-weight:700;color:#fff;margin:1.25rem 0 .75rem">🔧 Arduino Libraries</h3>
+          <ul class="spec-list">
+            <li><span>IMU Driver</span><span>MPU6050_light by rfetick</span></li>
+            <li><span>Temp/Humidity</span><span>DHT sensor library (Adafruit)</span></li>
+            <li><span>I2C</span><span>Wire.h (built-in)</span></li>
+            <li><span>Board</span><span>Arduino AVR Boards — Mega 2560</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pin Mapping -->
+<section class="obs-fade" style="margin-top:3rem">
+  <span class="section-label">HARDWARE REFERENCE</span>
+  <h2 class="section-title">Arduino Mega 2560 — Pin Mapping</h2>
+  <p class="section-desc">Complete pin assignments for the demo-ready hardware configuration.</p>
+
+  <div class="alert alert-warn" style="margin-top:1rem">
+    <strong>⚠️ Hardware Change Notice:</strong> The original STM32F103C6 (Blue Pill) was replaced with Arduino Mega 2560 after the ST-Link's SWD pins were electrically damaged. All sensors and motors remain identical — only the MCU and pin assignments changed.
+  </div>
+
+  <div class="glass-card" style="padding:1.5rem;margin-top:1rem;overflow-x:auto">
+    <h3 style="font-size:.85rem;font-weight:700;color:var(--accent-amber);margin-bottom:.75rem">Sensor Pin Assignments</h3>
+    <table class="pin-table">
+      <thead><tr><th>Sensor</th><th>Pin(s)</th><th>VCC</th><th>Type</th></tr></thead>
+      <tbody>
+        <tr><td>HC-SR04 Front</td><td>TRIG: 9, ECHO: 10</td><td>5V</td><td>Digital</td></tr>
+        <tr><td>HC-SR04 Back</td><td>TRIG: 7, ECHO: 8</td><td>5V</td><td>Digital</td></tr>
+        <tr><td>MAX4466 Mic #1</td><td>A0</td><td>3.3V</td><td>Analog (ADC)</td></tr>
+        <tr><td>MAX4466 Mic #2</td><td>A1</td><td>3.3V</td><td>Analog (ADC)</td></tr>
+        <tr><td>MQ-2 Smoke</td><td>A2</td><td>5V</td><td>Analog (ADC)</td></tr>
+        <tr><td>DHT11 Temp/Hum</td><td>Pin 4</td><td>5V</td><td>Digital (1-Wire)</td></tr>
+        <tr><td>MPU6050 IMU</td><td>SDA: 20, SCL: 21</td><td>3.3V</td><td>I2C</td></tr>
+      </tbody>
+    </table>
+    <h3 style="font-size:.85rem;font-weight:700;color:var(--accent-amber);margin:1.5rem 0 .75rem">Motor Driver (L298N) Pin Assignments</h3>
+    <table class="pin-table">
+      <thead><tr><th>L298N Pin</th><th>Mega Pin</th><th>Function</th></tr></thead>
+      <tbody>
+        <tr><td>ENA</td><td>Pin 5 (PWM)</td><td>Left motor speed control</td></tr>
+        <tr><td>IN1</td><td>Pin 22</td><td>Left motor direction 1</td></tr>
+        <tr><td>IN2</td><td>Pin 23</td><td>Left motor direction 2</td></tr>
+        <tr><td>IN3</td><td>Pin 24</td><td>Right motor direction 1</td></tr>
+        <tr><td>IN4</td><td>Pin 25</td><td>Right motor direction 2</td></tr>
+        <tr><td>ENB</td><td>Pin 6 (PWM)</td><td>Right motor speed control</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Communication Protocol -->
+<section class="obs-fade" style="margin-top:3rem">
+  <span class="section-label">PROTOCOL SPECIFICATION</span>
+  <h2 class="section-title">Communication Protocol</h2>
+  <div class="glass-card" style="padding:1.5rem;margin-top:1rem;overflow-x:auto">
+    <h3 style="font-size:.85rem;font-weight:700;color:var(--accent-amber);margin-bottom:.75rem">Commands (Pi → Mega)</h3>
+    <p style="font-size:.8rem;color:#94a3b8;margin-bottom:.75rem">ASCII commands terminated by <code>\n</code>. Mega executes movement for 2 seconds, then auto-stops.</p>
+    <table class="pin-table">
+      <thead><tr><th>Command</th><th>Behavior</th></tr></thead>
+      <tbody>
+        <tr><td><code>FORWARD\n</code></td><td>Move forward for 2 seconds</td></tr>
+        <tr><td><code>BACKWARD\n</code></td><td>Move backward for 2 seconds</td></tr>
+        <tr><td><code>LEFT\n</code></td><td>Tank-turn left for 2 seconds</td></tr>
+        <tr><td><code>RIGHT\n</code></td><td>Tank-turn right for 2 seconds</td></tr>
+        <tr><td><code>STOP\n</code></td><td>Immediate stop</td></tr>
+      </tbody>
+    </table>
+    <h3 style="font-size:.85rem;font-weight:700;color:var(--accent-amber);margin:1.5rem 0 .75rem">Telemetry (Mega → Pi) — Every 300ms</h3>
+    <div class="code-block">{"dist_front": 45, "dist_back": 80, "mic1": 340, "mic2": 335, "smoke": 420, "yaw": 1.2, "pitch": -0.5, "roll": 0.3, "temp": 24.5, "hum": 45.0, "connected": true}</div>
+    <table class="pin-table" style="margin-top:.75rem">
+      <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>dist_front / dist_back</td><td>int</td><td>Ultrasonic distance (cm)</td></tr>
+        <tr><td>mic1 / mic2</td><td>int</td><td>Microphone analog values (0-1023)</td></tr>
+        <tr><td>smoke</td><td>int</td><td>MQ-2 smoke sensor raw value (0-1023)</td></tr>
+        <tr><td>yaw / pitch / roll</td><td>float</td><td>MPU6050 orientation angles (degrees)</td></tr>
+        <tr><td>temp / hum</td><td>float</td><td>DHT11 temperature (°C) / humidity (%)</td></tr>
+        <tr><td>connected</td><td>bool</td><td>Mega connection alive flag</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Code Explorer -->
+<section class="obs-fade" style="margin-top:3rem">
+  <span class="section-label">SOURCE CODE</span>
+  <h2 class="section-title">Architectural Blueprint Explorer</h2>
+  <p class="section-desc">Examine key source files from the robot's software stack.</p>
+  <div class="glass-card" style="margin-top:1rem;overflow:hidden;display:flex;border-radius:1rem;min-height:420px">
+    <!-- File tree -->
+    <div style="width:250px;flex-shrink:0;background:rgba(9,13,22,.9);border-right:1px solid rgba(30,41,59,.8);padding:1.25rem;font-size:.75rem;font-family:var(--font-mono)">
+      <div style="font-size:.6rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;border-bottom:1px solid #0f172a;padding-bottom:.5rem">Workspace</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button class="ide-file-btn active" data-file="autonomy" style="background:none;border:none;cursor:pointer;text-align:left;color:#cbd5e1;font-size:.75rem;font-family:var(--font-mono);padding:4px 6px;border-radius:4px;display:flex;align-items:center;gap:6px"><span style="color:#f59e0b;font-size:.6rem;font-weight:700;background:rgba(245,158,11,.1);padding:1px 5px;border-radius:3px;border:1px solid rgba(245,158,11,.15)">PY</span> autonomy_controller.py</button>
+        <button class="ide-file-btn" data-file="uart_reader" style="background:none;border:none;cursor:pointer;text-align:left;color:#64748b;font-size:.75rem;font-family:var(--font-mono);padding:4px 6px;border-radius:4px;display:flex;align-items:center;gap:6px"><span style="color:#06b6d4;font-size:.6rem;font-weight:700;background:rgba(6,182,212,.1);padding:1px 5px;border-radius:3px;border:1px solid rgba(6,182,212,.15)">PY</span> uart_reader.py</button>
+        <button class="ide-file-btn" data-file="ai_vision" style="background:none;border:none;cursor:pointer;text-align:left;color:#64748b;font-size:.75rem;font-family:var(--font-mono);padding:4px 6px;border-radius:4px;display:flex;align-items:center;gap:6px"><span style="color:#10b981;font-size:.6rem;font-weight:700;background:rgba(16,185,129,.1);padding:1px 5px;border-radius:3px;border:1px solid rgba(16,185,129,.15)">PY</span> ai_vision.py</button>
+        <button class="ide-file-btn" data-file="arduino" style="background:none;border:none;cursor:pointer;text-align:left;color:#64748b;font-size:.75rem;font-family:var(--font-mono);padding:4px 6px;border-radius:4px;display:flex;align-items:center;gap:6px"><span style="color:#fb7185;font-size:.6rem;font-weight:700;background:rgba(244,63,94,.1);padding:1px 5px;border-radius:3px;border:1px solid rgba(244,63,94,.15)">C++</span> mega_firmware.ino</button>
+      </div>
+    </div>
+    <!-- Editor -->
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0">
+      <div style="height:36px;background:rgba(9,13,22,.8);border-bottom:1px solid rgba(15,23,42,.6);display:flex;align-items:center;justify-content:space-between;padding:0 1rem">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:10px;height:10px;border-radius:50%;background:#f43f5e;display:inline-block"></span>
+          <span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>
+          <span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block"></span>
+          <div id="ide-active-tab-title" style="margin-left:12px;font-size:.75rem;color:#94a3b8;font-family:var(--font-mono);display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--accent-amber)"></span><span>autonomy_controller.py</span></div>
+        </div>
+        <span id="ide-lang-label" style="font-size:.6rem;font-family:var(--font-mono);color:#475569">Language: Python</span>
+      </div>
+      <div style="flex:1;overflow:auto;padding:1.25rem;font-family:var(--font-mono);font-size:.75rem;line-height:1.65">
+        <pre id="ide-code-block" style="color:#cbd5e1"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div><p>&copy; 2026 Group 7 — CSE 396 Computer Engineering Project</p><p style="font-size:.6rem;color:#334155">Gebze Technical University</p></div>
+  <nav><a href="index.html">Home</a><a href="technical.html">Technical</a><a href="modules.html">Modules</a><a href="team.html">Team</a><a href="manual.html">Manual</a></nav>
+</footer>
+
+</main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

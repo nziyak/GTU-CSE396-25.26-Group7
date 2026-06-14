@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Autonomous First Responder Fire & Rescue Robot — Edge AI-driven reconnaissance robot with Tri-Modal Sensor Fusion, Acoustic Localization, and a Unity Digital Twin.">
+  <title>FireBot G7 — Autonomous First Responder Fire &amp; Rescue Robot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="layout">
+<!-- Top Navbar -->
+<header class="top-navbar">
+  <div class="navbar-container">
+    <div class="navbar-logo">
+      <span class="brand">FireBot</span>
+      <span class="badge">G7</span>
+    </div>
+    <button class="hamburger" aria-label="Menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <nav class="navbar-nav">
+      <a href="index.html" class="nav-link" data-nav="home">Home</a>
+      <a href="technical.html" class="nav-link" data-nav="technical">Technical</a>
+      <a href="modules.html" class="nav-link" data-nav="modules">Modules</a>
+      <a href="team.html" class="nav-link" data-nav="team">Team</a>
+      <a href="manual.html" class="nav-link" data-nav="manual">User Manual</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="main">
+
+<!-- Hero -->
+<section class="hero">
+  <div>
+    <div class="hero-badge">🔥 EDGE AI &bull; 🎯 TRI-MODAL FUSION &bull; 🤖 AUTONOMOUS</div>
+    <h1>First Responder<br><span class="gradient">Fire &amp; Rescue Robot</span></h1>
+    <p>An autonomous Edge-AI reconnaissance robot that enters disaster zones before firefighters. It maps the area, locates victims via Tri-Modal Sensor Fusion (Vision + Acoustics + Environment), classifies victim severity, and provides initial support — all on-device with zero cloud dependency.</p>
+    <div class="hero-actions">
+      <a href="https://youtu.be/DEMO_VIDEO_LINK" target="_blank" class="btn-primary">
+        <svg style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Watch Demo (3:30)
+      </a>
+      <a href="manual.html" class="btn-outline">User Manual</a>
+    </div>
+    <div class="hero-trust">
+      <div class="trust-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg> 100% LOCAL INFERENCE</div>
+      <div class="trust-item"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> ZERO CLOUD DEPENDENCY</div>
+    </div>
+  </div>
+  <div class="robot-visual">
+    <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f59e0b" stop-opacity="0.8"/><stop offset="100%" stop-color="#f97316" stop-opacity="0.2"/></linearGradient>
+        <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feComposite in="SourceGraphic" in2="b" operator="over"/></filter>
+      </defs>
+      <!-- Grid -->
+      <g stroke="rgba(255,255,255,.02)" stroke-width="1"><line x1="0" y1="100" x2="400" y2="100"/><line x1="0" y1="200" x2="400" y2="200"/><line x1="0" y1="300" x2="400" y2="300"/><line x1="100" y1="0" x2="100" y2="400"/><line x1="200" y1="0" x2="200" y2="400"/><line x1="300" y1="0" x2="300" y2="400"/></g>
+      <!-- Radar Pulse -->
+      <circle cx="200" cy="195" r="10" fill="none" stroke="#06b6d4" stroke-width="2" class="anim-radar"></circle>
+
+      <!-- Robot Chassis (storyline bobbing/rotating) -->
+      <g class="anim-story-chassis">
+        
+        <!-- Wheels (moved inside chassis to rotate with it) -->
+        <g class="anim-wheel">
+          <rect x="105" y="255" width="30" height="40" rx="8" fill="rgba(245,158,11,.2)" stroke="#f59e0b" stroke-width="1.5"/>
+          <rect x="265" y="255" width="30" height="40" rx="8" fill="rgba(245,158,11,.2)" stroke="#f59e0b" stroke-width="1.5"/>
+        </g>
+
+        <!-- Robot body -->
+        <rect x="120" y="150" width="160" height="120" rx="16" fill="rgba(30,41,59,.6)" stroke="rgba(245,158,11,.3)" stroke-width="2"/>
+        
+        <!-- MPU6050 Center -->
+        <rect x="190" y="200" width="20" height="20" fill="#1e293b" stroke="#cbd5e1" stroke-width="1" rx="2" />
+        <text x="200" y="213" fill="#cbd5e1" font-size="6" text-anchor="middle" font-family="monospace">IMU</text>
+
+        <!-- MQ-2 Top (Smoke) -->
+        <circle cx="200" cy="165" r="12" fill="#334155" stroke="#94a3b8" stroke-width="1.5" />
+        <circle cx="200" cy="165" r="6" fill="#1e293b" />
+        <g class="anim-story-smoke">
+           <text x="200" y="145" fill="#f97316" font-size="10" text-anchor="middle" font-weight="bold" font-family="monospace">SMOKE ALERT!</text>
+           <circle cx="200" cy="165" r="16" fill="none" stroke="#f97316" stroke-width="2" class="anim-radar" />
+        </g>
+
+        <!-- HC-SR04 Front -->
+        <rect x="140" y="146" width="30" height="8" fill="#334155" rx="4"/>
+        <circle cx="148" cy="150" r="3" fill="#020617"/>
+        <circle cx="162" cy="150" r="3" fill="#020617"/>
+        <text x="155" y="140" fill="#ef4444" font-size="8" text-anchor="middle" font-weight="bold" font-family="monospace" class="anim-story-obs-text">OBSTACLE!</text>
+
+        <!-- DHT11 Front -->
+        <rect x="230" y="146" width="16" height="8" fill="#0369a1" rx="2"/>
+        <line x1="234" y1="148" x2="234" y2="152" stroke="#bae6fd" stroke-width="1"/>
+        <line x1="238" y1="148" x2="238" y2="152" stroke="#bae6fd" stroke-width="1"/>
+        <line x1="242" y1="148" x2="242" y2="152" stroke="#bae6fd" stroke-width="1"/>
+
+        <!-- HC-SR04 Back -->
+        <rect x="185" y="266" width="30" height="8" fill="#334155" rx="4"/>
+        <circle cx="193" cy="270" r="3" fill="#020617"/>
+        <circle cx="207" cy="270" r="3" fill="#020617"/>
+
+        <!-- Microphones Left & Right -->
+        <rect x="116" y="200" width="8" height="16" fill="#334155" rx="4"/>
+        <circle cx="120" cy="208" r="2" fill="#020617"/>
+        <g class="anim-story-audio">
+           <text x="90" y="190" fill="#06b6d4" font-size="8" text-anchor="middle" font-weight="bold" font-family="monospace">AUDIO TARGET!</text>
+           <path d="M110 200 Q100 208 110 216" fill="none" stroke="#06b6d4" stroke-width="1.5"/>
+           <path d="M106 196 Q90 208 106 220" fill="none" stroke="#06b6d4" stroke-width="1.5"/>
+        </g>
+
+        <rect x="276" y="200" width="8" height="16" fill="#334155" rx="4"/>
+        <circle cx="280" cy="208" r="2" fill="#020617"/>
+
+        <!-- Camera eye scanning -->
+        <g class="anim-eye">
+          <circle cx="200" cy="195" r="22" fill="rgba(6,182,212,.15)" stroke="#06b6d4" stroke-width="2" filter="url(#glow)"/>
+          <circle cx="200" cy="195" r="10" fill="#06b6d4" opacity=".6"/>
+          <circle cx="200" cy="195" r="4" fill="#fff" opacity=".8"/>
+        </g>
+
+        <!-- Antenna -->
+        <line x1="200" y1="150" x2="200" y2="110" stroke="#f59e0b" stroke-width="2"/>
+        <circle cx="200" cy="106" r="5" fill="#f59e0b" filter="url(#glow)" class="anim-ant"></circle>
+
+        <!-- Sensor beams -->
+        <g opacity=".5">
+          <line x1="120" y1="210" x2="60" y2="180" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 4" class="anim-beam"></line>
+          <line x1="280" y1="210" x2="340" y2="180" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 4" class="anim-beam"></line>
+          <!-- Front Beam with Storyline Colors -->
+          <line x1="155" y1="146" x2="155" y2="70" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 4" class="anim-story-front"></line>
+        </g>
+      </g>
+      <!-- Labels -->
+      <rect x="30" y="75" width="100" height="32" rx="6" fill="rgba(9,13,22,.85)" stroke="rgba(245,158,11,.2)"/>
+      <text x="45" y="89" fill="#f59e0b" font-family="monospace" font-size="8" font-weight="bold">YOLO v8</text>
+      <text x="45" y="99" fill="#94a3b8" font-family="monospace" font-size="7">EDGE AI ACTIVE</text>
+      
+      <rect x="270" y="75" width="110" height="32" rx="6" fill="rgba(9,13,22,.85)" stroke="rgba(16,185,129,.2)"/>
+      <g class="anim-status-1">
+        <text x="285" y="89" fill="#94a3b8" font-family="monospace" font-size="8" font-weight="bold">VICTIM: SEARCHING</text>
+        <text x="285" y="99" fill="#64748b" font-family="monospace" font-size="7">SEVERITY: UNKNOWN</text>
+      </g>
+      <g class="anim-status-2">
+        <text x="285" y="89" fill="#10b981" font-family="monospace" font-size="8" font-weight="bold">VICTIM: FOUND</text>
+        <text x="285" y="99" fill="#f59e0b" font-family="monospace" font-size="7">SEVERITY: TRAPPED</text>
+      </g>
+      <!-- Pi 5 label -->
+      <rect x="140" y="310" width="120" height="24" rx="5" fill="rgba(9,13,22,.8)" stroke="rgba(6,182,212,.2)"/>
+      <text x="155" y="326" fill="#06b6d4" font-family="monospace" font-size="8" font-weight="bold">Raspberry Pi 5 + Mega</text>
+    </svg>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats-grid obs-fade">
+  <div class="stat-card"><div class="stat-val" data-counter data-target="8">0</div><div class="stat-label">Team Members</div></div>
+  <div class="stat-card"><div class="stat-val" data-counter data-target="5">0</div><div class="stat-label">Software Modules</div></div>
+  <div class="stat-card"><div class="stat-val" data-counter data-target="7">0</div><div class="stat-label">Sensor Types</div></div>
+  <div class="stat-card"><div class="stat-val" data-counter data-target="3">0</div><div class="stat-label">AI Models</div></div>
+</div>
+
+<!-- Hardware Overview Photos -->
+<section class="obs-fade" style="margin-top:4rem">
+  <span class="section-label">HARDWARE OVERVIEW</span>
+  <h2 class="section-title">Robot Gallery</h2>
+  <p class="section-desc">Physical implementation of the Tri-Modal Fire & Rescue Robot.</p>
+  
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:2rem;margin-top:2rem">
+    <div class="glass-card" style="padding:1rem;text-align:center">
+      <div style="aspect-ratio:4/3;background:rgba(9,13,22,.8);border:1px dashed rgba(245,158,11,.3);border-radius:.5rem;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;overflow:hidden;padding:.5rem">
+        <img src="robot_overview.jpg" alt="Robot Overview" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div style="color:#64748b;font-family:var(--font-mono);font-size:.8rem;display:none;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:.5rem">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;opacity:0.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          Waiting for robot_overview.jpg...
+        </div>
+      </div>
+      <h3 style="font-size:1.1rem;color:#f8fafc">Exterior Overview</h3>
+      <p style="font-size:.85rem;color:#94a3b8;margin-top:.5rem">Top-diagonal view of the chassis. Add your sensor annotations here.</p>
+    </div>
+    <div class="glass-card" style="padding:1rem;text-align:center">
+      <div style="aspect-ratio:4/3;background:rgba(9,13,22,.8);border:1px dashed rgba(6,182,212,.3);border-radius:.5rem;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;overflow:hidden;padding:.5rem">
+        <img src="inside.jpeg" alt="Robot Inside View" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div style="color:#64748b;font-family:var(--font-mono);font-size:.8rem;display:none;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:.5rem">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;opacity:0.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
+          Waiting for inside.jpeg...
+        </div>
+      </div>
+      <h3 style="font-size:1.1rem;color:#f8fafc">Internal Hardware</h3>
+      <p style="font-size:.85rem;color:#94a3b8;margin-top:.5rem">Cover removed, showing Raspberry Pi 5, Arduino Mega, and power distribution.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Decision Engine Highlight -->
+<div class="decision-banner obs-fade">
+  <h3>🧠 Decision Engine — <code style="font-size:.85rem;color:#f59e0b">AutonomyController</code></h3>
+  <p>The robot's brain lives in <strong>autonomy_controller.py</strong> on the Raspberry Pi 5. It implements a <strong>priority-based decision tree</strong> that fuses data from all three sensing modalities:</p>
+  <p style="margin-top:.5rem"><strong style="color:#fb7185">Priority 1 — Obstacle Avoidance:</strong> If the front ultrasonic sensor reads ≤18 cm, the robot immediately turns (alternating LEFT/RIGHT) to avoid collision.<br>
+  <strong style="color:#fbbf24">Priority 2 — Victim Approach:</strong> If the YOLO + CNN pipeline detects a TRAPPED or LYING victim, the controller steers the robot toward the target by comparing the bounding box center against the frame center (±70px tolerance), and stops when distance ≤60 cm.<br>
+  <strong style="color:#34d399">Priority 3 — Patrol:</strong> When no obstacle or victim is detected, the robot moves FORWARD in autonomous patrol mode, sweeping the environment.</p>
+  <p style="margin-top:.5rem">Each decision cycle runs at <strong>4 Hz</strong> (250ms), merging UART telemetry from the Arduino Mega with real-time vision output. The decision is sent back to the Mega as a simple command (<code>FORWARD\n</code>, <code>LEFT\n</code>, etc.), which executes the movement for 2 seconds before auto-stopping.</p>
+</div>
+
+<!-- Features -->
+<section class="obs-fade" style="margin-top:3rem">
+  <span class="section-label">CORE CAPABILITIES</span>
+  <h2 class="section-title">System Architecture Highlights</h2>
+  <p class="section-desc">A multi-module cyber-physical system combining edge AI, acoustic localization, and real-time telemetry.</p>
+  <div class="feature-grid" style="margin-top:1.5rem">
+    <div class="glass-card feature-card">
+      <div class="feature-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg></div>
+      <h3>Two-Stage Edge AI Vision</h3>
+      <p>YOLOv8 detects humans in real-time on the Pi Camera V3. A custom CNN (ONNX) then classifies victim severity: TRAPPED, LYING, or STANDING — entirely on-device with no cloud.</p>
+    </div>
+    <div class="glass-card feature-card">
+      <div class="feature-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg></div>
+      <h3>Acoustic Source Localization</h3>
+      <p>Dual MAX4466 microphone array with software IIR filtering detects distress calls and computes bearing angles to guide the robot toward sound sources in smoke-filled environments.</p>
+    </div>
+    <div class="glass-card feature-card">
+      <div class="feature-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg></div>
+      <h3>Arduino Mega Sensor Hub</h3>
+      <p>The Arduino Mega 2560 drives 4WD DC motors via L298N, reads HC-SR04 ultrasonics, MPU6050 IMU, DHT11 temperature, MQ-2 smoke, and streams JSON telemetry at 300ms intervals.</p>
+    </div>
+    <div class="glass-card feature-card">
+      <div class="feature-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg></div>
+      <h3>Unity Digital Twin + Web Dashboard</h3>
+      <p>A real-time Unity 3D operator interface mirrors the robot's state, drops color-coded victim pins, and supports Push-to-Talk. Flask/WebSocket backend bridges all modules.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Architecture Overview -->
+<section class="obs-fade" style="margin-top:3rem">
+  <span class="section-label">SYSTEM FLOW</span>
+  <h2 class="section-title">How It Works</h2>
+  <div class="glass-card" style="padding:1.5rem;margin-top:1rem">
+    <div class="code-block" style="font-size:.72rem;line-height:1.5">
+[Unity Digital Twin]  ⟵──── WebSocket (JSON Telemetry + Video) ────⟶  [Web Dashboard (Flask)]
+       │                                                                        │
+  (PTT Audio)                                                         (Python Function Calls)
+       │                                                                        │
+       ▼                                                                        ▼
+[Vision Pipeline]  ⟵──── Pause/Resume Interrupts ────⟶  [AutonomyController 🧠]
+  (YOLOv8 + CNN)                                              (Decision Engine)
+       │                                                            │
+  (Pi Camera V3)                                           (UART USB Commands)
+       │                                                            │
+       └─────────────────────── Raspberry Pi 5 ─────────────────────┘
+                                      │
+                            USB Serial (115200 baud)
+                                      │
+                                      ▼
+                          [Arduino Mega 2560]
+                    ┌──────────┼──────────┐
+                  (PWM)      (ADC)      (I2C)
+               L298N Motors  Mics/MQ2  MPU6050
+               HC-SR04 ×2    DHT11
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>
+    <p>&copy; 2026 Group 7 — CSE 396 Computer Engineering Project</p>
+    <p style="font-size:.6rem;color:#334155">Gebze Technical University &bull; Instructor: Salih Sarp</p>
+  </div>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="technical.html">Technical</a>
+    <a href="modules.html">Modules</a>
+    <a href="team.html">Team</a>
+    <a href="manual.html">Manual</a>
+  </nav>
+</footer>
+
+</main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

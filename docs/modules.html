@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modules — FireBot G7</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="layout">
+<!-- Top Navbar -->
+<header class="top-navbar">
+  <div class="navbar-container">
+    <div class="navbar-logo">
+      <span class="brand">FireBot</span>
+      <span class="badge">G7</span>
+    </div>
+    <button class="hamburger" aria-label="Menu"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <nav class="navbar-nav">
+      <a href="index.html" class="nav-link" data-nav="home">Home</a>
+      <a href="technical.html" class="nav-link" data-nav="technical">Technical</a>
+      <a href="modules.html" class="nav-link" data-nav="modules">Modules</a>
+      <a href="team.html" class="nav-link" data-nav="team">Team</a>
+      <a href="manual.html" class="nav-link" data-nav="manual">User Manual</a>
+    </nav>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="main">
+<section>
+  <span class="section-label">MODULE ARCHITECTURE</span>
+  <h2 class="section-title">5-Module Deep Dive</h2>
+  <p class="section-desc">Each module is a self-contained subsystem. Click to expand and explore responsibilities, APIs, data contracts, and inter-module connections.</p>
+
+  <div class="decision-banner" style="margin:1.5rem 0">
+    <h3>🧠 Where Is the Decision Engine?</h3>
+    <p>The <strong>AutonomyController</strong> (part of the Pi-side integration layer) is the robot's central decision engine. It sits between MOD-02 (Vision) and MOD-01 (Embedded Hardware), consuming sensor telemetry and vision targets to produce motor commands. It implements a strict priority cascade: <strong>Obstacle Avoidance → Victim Approach → Autonomous Patrol</strong>. The FSM state transitions in MOD-03 complement this by handling acoustic-triggered interrupts.</p>
+  </div>
+
+  <div style="margin-top:1.5rem">
+    <!-- MOD-01 -->
+    <div class="accordion-item open">
+      <div class="accordion-header"><div style="display:flex;align-items:center;gap:.75rem"><span class="mod-badge">MOD-01</span> Embedded &amp; Hardware — Arduino Mega 2560</div><span class="arrow">▾</span></div>
+      <div class="accordion-body">
+        <p>The "reflexive core" of the robot. Originally built on STM32F103C6 (Blue Pill), migrated to <strong>Arduino Mega 2560</strong> after ST-Link SWD pin damage. Handles all real-time hardware control.</p>
+        <h4>Key Responsibilities</h4>
+        <ul>
+          <li>4WD motor control via L298N H-Bridge (PWM speed + GPIO direction)</li>
+          <li>HC-SR04 ultrasonic distance sensing (front + back)</li>
+          <li>MPU6050 IMU for yaw/pitch/roll orientation tracking</li>
+          <li>DHT11 temperature/humidity and MQ-2 smoke/gas sensing</li>
+          <li>MAX4466 microphone array analog sampling</li>
+          <li>JSON telemetry streaming at 300ms intervals over USB Serial</li>
+          <li>Command reception and timed execution (2-second auto-stop)</li>
+        </ul>
+        <h4>Key API (Arduino Firmware)</h4>
+        <ul>
+          <li><code>sendSensorData()</code> — Aggregates all sensor readings into JSON and transmits to Pi</li>
+          <li><code>komutuUygula(cmd)</code> — Parses FORWARD/BACKWARD/LEFT/RIGHT/STOP commands</li>
+          <li><code>setMotors(leftDir, rightDir)</code> — Low-level L298N control with PWM speed=200</li>
+          <li><code>readDistance(trig, echo)</code> — HC-SR04 pulse timing with 30ms timeout</li>
+        </ul>
+        <h4>Important Notes</h4>
+        <ul>
+          <li>MPU6050 must be on 3.3V (not 5V tolerant)</li>
+          <li>Arduino AVR doesn't support <code>snprintf %f</code> — floats use <code>Serial.print(val, 1)</code></li>
+          <li>MPU6050 I2C read must complete before ultrasonic pulseIn to avoid timing conflicts</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MOD-02 -->
+    <div class="accordion-item">
+      <div class="accordion-header"><div style="display:flex;align-items:center;gap:.75rem"><span class="mod-badge">MOD-02</span> AI &amp; Vision Pipeline</div><span class="arrow">▾</span></div>
+      <div class="accordion-body">
+        <p>Visual perception and victim classification layer running on Raspberry Pi 5. Implements a two-stage edge AI pipeline.</p>
+        <h4>Two-Stage Detection Pipeline</h4>
+        <ul>
+          <li><strong>Stage 1 — YOLOv8n:</strong> Real-time human detection on Pi Camera V3 frames (640×480). Selects the best person candidate by confidence × bounding box area.</li>
+          <li><strong>Stage 2 — Custom CNN (ONNX):</strong> Crops the detected person, resizes to 160×160, and classifies severity: TRAPPED, LYING, or STANDING. Uses a 2-second sliding window for stable predictions.</li>
+        </ul>
+        <h4>Decision Support Features</h4>
+        <ul>
+          <li><strong>Bbox Posture Correction:</strong> Width/height ratio overrides CNN when bbox shape strongly suggests standing (ratio &lt; 0.85) or lying (ratio &gt; 1.15)</li>
+          <li><strong>Trapped Protection:</strong> TRAPPED predictions are protected from being easily overridden — requires strong counter-evidence</li>
+          <li><strong>Dynamic FPS:</strong> Exploration mode at 5 FPS, boosted during assessment</li>
+          <li><strong>Pause/Resume:</strong> Vision pauses during STT processing to prevent OOM on Pi 5</li>
+        </ul>
+        <h4>Public Interface</h4>
+        <ul>
+          <li><code>initialize_camera()</code> — Loads YOLO + ONNX models, starts PiCamera2</li>
+          <li><code>get_latest_target()</code> → <code>TargetData(pos_x, pos_y, distance_cm, severity, confidence)</code></li>
+          <li><code>pause_vision_pipeline()</code> / <code>resume_vision_pipeline()</code></li>
+          <li><code>build_augmented_status_report(...)</code> — Merges vision output with sensor data</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MOD-03 -->
+    <div class="accordion-item">
+      <div class="accordion-header"><div style="display:flex;align-items:center;gap:.75rem"><span class="mod-badge">MOD-03</span> Acoustics &amp; Navigation</div><span class="arrow">▾</span></div>
+      <div class="accordion-body">
+        <p>Acoustic sensing and autonomous navigation layer. Provides directional hearing capability that complements vision in smoke-filled environments.</p>
+        <h4>Signal Processing Pipeline</h4>
+        <ul>
+          <li>Dual MAX4466 microphones sampled via Arduino Mega ADC (A0, A1)</li>
+          <li>Software-based Digital IIR Filter attenuates motor/gearbox noise</li>
+          <li>Bearing computation via phase difference between microphone signals</li>
+          <li>Minimum 3 consecutive confirmations required to trigger acoustic homing</li>
+        </ul>
+        <h4>FSM Acoustic States</h4>
+        <ul>
+          <li>11 FSM states shared across the project (IDLE, EXPLORE, SPIN_MAP, ACOUSTIC_HOMING, etc.)</li>
+          <li>3-second cooldown between homing transitions to prevent rapid re-triggering</li>
+          <li>30-second homing timeout — falls back to EXPLORE if source not found</li>
+          <li>±10° dead zone — bearings within ±10° drive the robot straight forward</li>
+        </ul>
+        <h4>Cross-Platform Implementation</h4>
+        <ul>
+          <li><strong>C (Arduino):</strong> <code>acoustics_iir.h</code> — IIR filter + bearing computation</li>
+          <li><strong>Python (Pi 5):</strong> <code>acoustic_homing.py</code> — Navigation bridge + streak tracking</li>
+          <li><strong>C# (Unity):</strong> <code>MapManager_AcousticBeam.cs</code> — Bearing visualization</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MOD-04 -->
+    <div class="accordion-item">
+      <div class="accordion-header"><div style="display:flex;align-items:center;gap:.75rem"><span class="mod-badge">MOD-04</span> Web Dashboard &amp; Speech-to-Text</div><span class="arrow">▾</span></div>
+      <div class="accordion-body">
+        <p>Communication bridge and operator-interaction layer. Connects the robot's internal stack with external operator interfaces.</p>
+        <h4>Web Dashboard (Flask + Socket.IO)</h4>
+        <ul>
+          <li><code>start_server(port=5001)</code> — Launches Flask/SocketIO server on the Pi 5</li>
+          <li><code>broadcast_telemetry(report)</code> — Sends AugmentedStatusReport to all connected clients</li>
+          <li><code>stream_video_frame(jpeg_bytes)</code> — Base64 JPEG streaming over WebSocket</li>
+          <li><code>on_operator_command_received(payload)</code> — Routes manual override commands</li>
+        </ul>
+        <h4>Speech-to-Text (Offline)</h4>
+        <ul>
+          <li>Vosk offline recognition model loaded on Pi 5</li>
+          <li>PTT audio blobs received from Unity → Base64 decoded → WAV processed</li>
+          <li>Vision pipeline is paused during STT to prevent RAM exhaustion</li>
+          <li>Recognized intent mapped to robot commands (FORWARD, STOP, RETURN_HOME)</li>
+        </ul>
+        <h4>WebSocket Events</h4>
+        <ul>
+          <li><code>telemetry_update</code> — Periodic robot state broadcast</li>
+          <li><code>video_frame</code> — JPEG frame stream</li>
+          <li><code>uart_debug</code> — Raw Arduino sensor data</li>
+          <li><code>operator_command</code> — Manual control from Unity</li>
+          <li><code>speech_command_parsed</code> — STT result notification</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- MOD-05 -->
+    <div class="accordion-item">
+      <div class="accordion-header"><div style="display:flex;align-items:center;gap:.75rem"><span class="mod-badge">MOD-05</span> Unity Digital Twin</div><span class="arrow">▾</span></div>
+      <div class="accordion-body">
+        <p>Primary operator interface built in Unity Engine. Provides a real-time "Digital Twin" visualization with 2D/3D hybrid dashboard.</p>
+        <h4>Core Scripts</h4>
+        <ul>
+          <li><strong>RobotManager.cs:</strong> Centralized coordinator — distributes data to UI, Map, and Acoustic managers</li>
+          <li><strong>WebSocketClient.cs:</strong> Socket.IO client using ClientWebSocket with thread marshaling</li>
+          <li><strong>MapManager.cs:</strong> GridToWorldPosition mapping, dictionary-based cell keys for victim pins</li>
+          <li><strong>UIManager.cs:</strong> HUD with telemetry gauges, victim status, environmental alerts</li>
+          <li><strong>AudioManager.cs:</strong> Manual WAV encoding (EncodeToWav) for 16-bit PCM Push-to-Talk</li>
+        </ul>
+        <h4>Features</h4>
+        <ul>
+          <li>Color-coded victim pins: 🔴 TRAPPED, 🟡 LYING, 🟢 STANDING</li>
+          <li>Acoustic beam visualization showing distress call bearing direction</li>
+          <li>Push-to-Talk (PTT) audio capture → WAV → Base64 → WebSocket → STT</li>
+          <li>Demo/Presentation mode with mock telemetry JSON playback</li>
+        </ul>
+        <h4>Data Contract (TelemetryData)</h4>
+        <ul>
+          <li><code>posX / posY</code> (float) — 2D grid coordinates</li>
+          <li><code>temperature</code> (float) — Environmental sensor</li>
+          <li><code>smokeDetected</code> (bool) — Fire safety indicator</li>
+          <li><code>victimStatus</code> (enum) — Standing / Lying / Trapped</li>
+          <li><code>acousticAngle</code> (float) — Distress call direction</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div><p>&copy; 2026 Group 7 — CSE 396</p></div>
+  <nav><a href="index.html">Home</a><a href="technical.html">Technical</a><a href="modules.html">Modules</a><a href="team.html">Team</a><a href="manual.html">Manual</a></nav>
+</footer>
+</main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
